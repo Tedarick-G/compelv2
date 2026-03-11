@@ -11,7 +11,7 @@ import {
   depotFromNoisyPaste,
 } from "./utils.js";
 
-const API_BASE = "https://doretest.tvkapora.workers.dev";
+const API_BASE = "https://crawler.iremolguntr.workers.dev";
 const $ = s => document.querySelector(s);
 
 const COMPEL_HDR = [
