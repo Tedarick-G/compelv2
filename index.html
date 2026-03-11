@@ -1,90 +1,54 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Compel / T-Soft / Aide</title>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;font:14px system-ui;background:#111;color:#eee}
-    .wrap{max-width:1400px;margin:0 auto;padding:12px}
-    .top{display:grid;gap:10px}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    button,input,textarea,summary{font:inherit}
-    button,.fake,.mini,summary{
-      height:36px;border:1px solid #333;background:#1b1b1b;color:#eee;
-      border-radius:8px;padding:0 12px
-    }
-    button{cursor:pointer}
-    button:disabled{opacity:.5;cursor:default}
-    details{position:relative}
-    summary{display:flex;align-items:center;list-style:none;cursor:pointer;min-width:220px}
-    summary::-webkit-details-marker{display:none}
-    .menu{
-      position:absolute;top:40px;left:0;z-index:5;width:320px;max-height:340px;overflow:auto;
-      border:1px solid #333;background:#171717;border-radius:8px;padding:8px
-    }
-    .menu label{display:flex;gap:8px;align-items:center;padding:5px 4px}
-    .menu label:hover{background:#202020}
-    .mini{display:flex;align-items:center;justify-content:center;padding:0 8px}
-    #aidePaste{
-      width:110px;min-width:110px;max-width:110px;height:36px;resize:none;overflow:hidden;
-      padding:8px 10px;text-align:center;line-height:18px
-    }
-    #aidePaste::placeholder{color:#eee;opacity:1}
-    #st{min-height:20px;color:#9ad}
-    .sec{margin-top:14px}
-    h3{margin:0 0 6px;font-size:14px}
-    .box{border:1px solid #333;border-radius:8px;background:#161616;overflow:auto}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border-bottom:1px solid #2a2a2a;padding:6px 8px;text-align:left;vertical-align:top;white-space:nowrap}
-    th{position:sticky;top:0;background:#1a1a1a}
-    .muted{color:#aaa}
-    .new{color:#8f8}
-    #moreWrap{padding:10px 0}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tedarick Minimal</title>
+<style>
+body{font:14px system-ui;margin:12px}
+.top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#brandWrap{position:relative}
+#brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
+#brandWrap.open #brandMenu{display:block}
+#brandMenu label{display:block;white-space:nowrap}
+button,input,textarea{font:inherit;padding:6px 12px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box;height:36px;margin:0;vertical-align:middle}
+textarea{width:120px;min-width:120px;max-width:120px;min-height:36px;max-height:36px;resize:none;overflow:hidden;text-align:center;line-height:22px;padding-top:6px;padding-bottom:6px}
+textarea::placeholder{color:#111;opacity:1}
+.chk{display:inline-flex;align-items:center;justify-content:center;width:36px;min-width:36px;height:36px;border:1px solid #bbb;background:#f3f3f3;box-sizing:border-box;margin:0}
+.chk input{margin:0}
+#status{margin:10px 0}
+#log{margin:8px 0;white-space:pre-wrap;font:12px ui-monospace,monospace;border:1px solid #ccc;padding:6px;min-height:18px}
+.block{margin:14px 0}
+table{border-collapse:collapse;width:100%;margin-top:6px}
+th,td{border:1px solid #ccc;padding:4px;vertical-align:top;text-align:left}
+small{color:#666}
+.meta{margin:4px 0 8px}
+h3{margin:0 0 4px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="row">
-        <details id="brandBox">
-          <summary id="brandSummary">Marka Seç</summary>
-          <div id="brandMenu" class="menu"></div>
-        </details>
-
-        <button id="tsoftDailyBtn" type="button">T-Soft Veri Yok</button>
-        <button id="tsoftPickBtn" type="button">CSV Yükle</button>
-        <input id="f2" type="file" accept=".csv,.txt" hidden />
-        <label class="mini"><input id="tsoftSaveToday" type="checkbox" />&nbsp;kaydet</label>
-
-        <button id="aideDailyBtn" type="button">Aide Veri Yok</button>
-        <textarea id="aidePaste" class="fake" rows="1" placeholder="Yapıştır"></textarea>
-        <label class="mini"><input id="aideSaveToday" type="checkbox" />&nbsp;kaydet</label>
-
-        <button id="go" type="button">Listele</button>
-      </div>
-
-      <div id="st"></div>
-    </div>
-
-    <div class="sec">
-      <h3>l1 Compel</h3>
-      <div class="box"><table id="compelTable"></table></div>
-      <div id="moreWrap"><button id="moreBtn" type="button" hidden></button></div>
-    </div>
-
-    <div class="sec">
-      <h3>l2 T-Soft</h3>
-      <div class="box"><table id="tsoftTable"></table></div>
-    </div>
-
-    <div class="sec">
-      <h3>l3 Aide</h3>
-      <div class="box"><table id="aideTable"></table></div>
-    </div>
+<div class="top">
+  <div id="brandWrap">
+    <button id="brandBtn" type="button">Marka</button>
+    <div id="brandMenu"></div>
   </div>
+  <button id="tsoftDaily" type="button">T-Soft Veri Yok</button>
+  <button id="csvBtn" type="button">CSV Yükle</button>
+  <label class="chk" title="T-Soft verisini kaydet"><input id="tsoftSave" type="checkbox"></label>
+  <input id="csv" type="file" accept=".csv,text/csv" hidden>
+  <button id="aideDaily" type="button">Aide Veri Yok</button>
+  <textarea id="aideRaw" placeholder="Yapıştır"></textarea>
+  <label class="chk" title="Aide verisini kaydet"><input id="aideSave" type="checkbox"></label>
+  <button id="listBtn" type="button">Listele</button>
+</div>
 
-  <script type="module" src="./js/app.js"></script>
+<div id="status"></div>
+<pre id="log"></pre>
+
+<div id="l1" class="block"></div>
+<div id="l2" class="block"></div>
+<div id="l3" class="block"></div>
+
+<script type="module" src="./app.js"></script>
 </body>
 </html>
