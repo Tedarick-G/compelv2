@@ -5,28 +5,67 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tedarick Minimal</title>
 <style>
-body{font:14px system-ui;margin:12px}
+body{font:14px system-ui;margin:12px;color:#111}
 .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 #brandWrap{position:relative}
 #brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
 #brandWrap.open #brandMenu{display:block}
 #brandMenu label{display:block;white-space:nowrap}
-button,input,textarea{font:inherit;padding:6px 12px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box;height:36px;margin:0;vertical-align:middle}
+button,input,textarea,select{font:inherit;padding:6px 12px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box;height:36px;margin:0;vertical-align:middle}
 textarea{width:120px;min-width:120px;max-width:120px;min-height:36px;max-height:36px;resize:none;overflow:hidden;text-align:center;line-height:22px;padding-top:6px;padding-bottom:6px}
 textarea::placeholder{color:#111;opacity:1}
 .chk{display:inline-flex;align-items:center;justify-content:center;width:36px;min-width:36px;height:36px;border:1px solid #bbb;background:#f3f3f3;box-sizing:border-box;margin:0}
 .chk input{margin:0}
 #status{margin:10px 0}
-#log{margin:8px 0;white-space:pre-wrap;font:12px ui-monospace,monospace;border:1px solid #ccc;padding:6px;min-height:18px}
+#log{margin:8px 0;white-space:pre-wrap;font:12px ui-monospace,monospace;border:1px solid #ccc;padding:6px;min-height:18px;background:#fafafa}
 .block{margin:14px 0}
 table{border-collapse:collapse;width:100%;margin-top:6px}
-th,td{border:1px solid #ccc;padding:4px;vertical-align:top;text-align:left}
+th,td{border:1px solid #ccc;padding:6px;vertical-align:top;text-align:left}
 small{color:#666}
 .meta{margin:4px 0 8px}
 h3{margin:0 0 4px}
+
+.panel{margin:14px 0;padding:12px;border:1px solid #ccc;background:#fff}
+.panelTitle{margin:0 0 10px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grow{flex:1 1 420px;min-width:260px}
+.urlInput{width:100%;background:#fff}
+.muted{color:#666}
+.hidden{display:none !important}
+
+.productGrid{display:grid;grid-template-columns:160px minmax(0,1fr);gap:12px;margin-top:12px}
+.productMedia{border:1px solid #ddd;background:#fafafa;display:flex;align-items:center;justify-content:center;min-height:160px}
+.productMedia img{display:block;max-width:100%;max-height:220px;object-fit:contain}
+.productMeta{display:grid;gap:8px}
+.kv{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px}
+.kv b{font-weight:600}
+.linkRow a{word-break:break-all}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #ccc;background:#f8f8f8;cursor:pointer}
+.chip input{margin:0}
+.chip.active{border-color:#111;background:#efefef}
+
+.jsonBox{
+  margin-top:10px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  font:12px ui-monospace,monospace;
+  border:1px solid #ccc;
+  padding:8px;
+  min-height:48px;
+  max-height:320px;
+  overflow:auto;
+  background:#fafafa
+}
+
+@media (max-width:720px){
+  .productGrid{grid-template-columns:1fr}
+  .kv{grid-template-columns:1fr}
+}
 </style>
 </head>
-<body>
+<body data-worker-base="">
 <div class="top">
   <div id="brandWrap">
     <button id="brandBtn" type="button">Marka</button>
@@ -43,6 +82,84 @@ h3{margin:0 0 4px}
   <label class="chk" title="Aide verisini kaydet"><input id="aideSave" type="checkbox"></label>
 
   <button id="listBtn" type="button">Listele</button>
+</div>
+
+<div class="panel" id="productPanel">
+  <h2 class="panelTitle">Compel Ürün Testi</h2>
+
+  <div class="row">
+    <div class="grow">
+      <input
+        id="productUrl"
+        class="urlInput"
+        type="url"
+        placeholder="Compel ürün linki yapıştır"
+        autocomplete="off"
+        spellcheck="false"
+      >
+    </div>
+
+    <label class="chip" for="expandToggle" title="expand=1 ile tüm varyant detaylarını getir">
+      <input id="expandToggle" type="checkbox" checked>
+      <span>Expand</span>
+    </label>
+
+    <button id="productFetchBtn" type="button">Ürünü Getir</button>
+    <button id="productClearBtn" type="button">Temizle</button>
+  </div>
+
+  <div class="meta muted" id="productFetchInfo">
+    Worker endpoint’i burada kullanılacak. JS tarafında body[data-worker-base] veya sabit değişken üzerinden bağlanacak.
+  </div>
+
+  <div id="productResult" class="hidden">
+    <div class="productGrid">
+      <div class="productMedia">
+        <img id="productImage" alt="" src="">
+      </div>
+
+      <div class="productMeta">
+        <div class="kv"><b>Marka</b><span id="productBrand">-</span></div>
+        <div class="kv"><b>Başlık</b><span id="productTitle">-</span></div>
+        <div class="kv"><b>Fiyat</b><span id="productPrice">-</span></div>
+        <div class="kv"><b>Stok</b><span id="productStock">-</span></div>
+        <div class="kv"><b>Ürün Kodu</b><span id="productCode">-</span></div>
+        <div class="kv"><b>EAN</b><span id="productEan">-</span></div>
+        <div class="kv"><b>Varyant Türü</b><span id="productVariantType">-</span></div>
+        <div class="kv"><b>Seçili Varyant</b><span id="productSelectedVariant">-</span></div>
+        <div class="kv"><b>Canonical URL</b><span id="productCanonicalUrl" class="linkRow">-</span></div>
+      </div>
+    </div>
+
+    <div id="variantBlock" class="block hidden">
+      <h3>Varyantlar</h3>
+      <div id="variantList" class="chips"></div>
+    </div>
+
+    <div id="variantTableWrap" class="block hidden">
+      <h3>Varyant Detayları</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Seçili</th>
+            <th>Tür</th>
+            <th>Etiket</th>
+            <th>Fiyat</th>
+            <th>Stok</th>
+            <th>Ürün Kodu</th>
+            <th>EAN</th>
+            <th>URL</th>
+          </tr>
+        </thead>
+        <tbody id="variantTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="block">
+      <h3>Ham JSON</h3>
+      <pre id="productJson" class="jsonBox"></pre>
+    </div>
+  </div>
 </div>
 
 <div id="status"></div>
