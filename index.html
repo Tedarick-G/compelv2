@@ -6,22 +6,34 @@
 <title>Tedarick Minimal</title>
 <style>
 body{font:14px system-ui;margin:12px}
-.top{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 #brandWrap{position:relative}
 #brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
 #brandWrap.open #brandMenu{display:block}
 #brandMenu label{display:block;white-space:nowrap}
-button,input,textarea{font:inherit;padding:6px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box}
+button,input,textarea{
+  font:inherit;
+  padding:6px 12px;
+  border:1px solid #bbb;
+  background:#f3f3f3;
+  color:#111;
+  box-sizing:border-box;
+  height:36px;
+  margin:0;
+  vertical-align:middle;
+}
 textarea{
   width:120px;
-  height:36px;
+  min-width:120px;
+  max-width:120px;
   min-height:36px;
   max-height:36px;
   resize:none;
   overflow:hidden;
   text-align:center;
-  vertical-align:middle;
   line-height:22px;
+  padding-top:6px;
+  padding-bottom:6px;
 }
 textarea::placeholder{color:#111;opacity:1}
 #status{margin:10px 0}
