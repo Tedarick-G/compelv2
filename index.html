@@ -11,13 +11,26 @@ body{font:14px system-ui;margin:12px}
 #brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
 #brandWrap.open #brandMenu{display:block}
 #brandMenu label{display:block;white-space:nowrap}
-button,input,textarea{font:inherit;padding:6px}
-textarea{width:90px;height:30px;resize:none}
-table{border-collapse:collapse;width:100%;margin-top:8px}
+button,input,textarea{font:inherit;padding:6px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box}
+textarea{
+  width:120px;
+  height:36px;
+  min-height:36px;
+  max-height:36px;
+  resize:none;
+  overflow:hidden;
+  text-align:center;
+  vertical-align:middle;
+  line-height:22px;
+}
+textarea::placeholder{color:#111;opacity:1}
+#status{margin:10px 0}
+.block{margin:14px 0}
+table{border-collapse:collapse;width:100%;margin-top:6px}
 th,td{border:1px solid #ccc;padding:4px;vertical-align:top;text-align:left}
 small{color:#666}
-#status{margin:10px 0}
-h3{margin:16px 0 6px}
+.meta{margin:4px 0 8px}
+h3{margin:0 0 4px}
 </style>
 </head>
 <body>
@@ -35,7 +48,10 @@ h3{margin:16px 0 6px}
 </div>
 
 <div id="status"></div>
-<div id="out"></div>
+
+<div id="l1" class="block"></div>
+<div id="l2" class="block"></div>
+<div id="l3" class="block"></div>
 
 <script type="module" src="./app.js"></script>
 </body>
