@@ -36,6 +36,19 @@ textarea{
   padding-bottom:6px;
 }
 textarea::placeholder{color:#111;opacity:1}
+.chk{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  min-width:36px;
+  height:36px;
+  border:1px solid #bbb;
+  background:#f3f3f3;
+  box-sizing:border-box;
+  margin:0;
+}
+.chk input{margin:0}
 #status{margin:10px 0}
 .block{margin:14px 0}
 table{border-collapse:collapse;width:100%;margin-top:6px}
@@ -51,11 +64,20 @@ h3{margin:0 0 4px}
     <button id="brandBtn" type="button">Marka</button>
     <div id="brandMenu"></div>
   </div>
+
   <button id="tsoftDaily" type="button">T-Soft Veri Yok</button>
   <button id="csvBtn" type="button">CSV Yükle</button>
+  <label class="chk" title="T-Soft verisini kaydet">
+    <input id="tsoftSave" type="checkbox">
+  </label>
   <input id="csv" type="file" accept=".csv,text/csv" hidden>
+
   <button id="aideDaily" type="button">Aide Veri Yok</button>
   <textarea id="aideRaw" placeholder="Yapıştır"></textarea>
+  <label class="chk" title="Aide verisini kaydet">
+    <input id="aideSave" type="checkbox">
+  </label>
+
   <button id="listBtn" type="button">Listele</button>
 </div>
 
