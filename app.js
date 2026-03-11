@@ -1,4 +1,4 @@
-const API_BASE="";
+const API_BASE="https://doretest.tvkapora.workers.dev";
 const TR="tr-TR";
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
