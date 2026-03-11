@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tedarick Minimal</title>
+<style>
+body{font:14px system-ui;margin:12px}
+.top{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+#brandWrap{position:relative}
+#brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
+#brandWrap.open #brandMenu{display:block}
+#brandMenu label{display:block;white-space:nowrap}
+button,input,textarea{font:inherit;padding:6px}
+textarea{width:90px;height:30px;resize:none}
+table{border-collapse:collapse;width:100%;margin-top:8px}
+th,td{border:1px solid #ccc;padding:4px;vertical-align:top;text-align:left}
+small{color:#666}
+#status{margin:10px 0}
+h3{margin:16px 0 6px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div id="brandWrap">
+    <button id="brandBtn" type="button">Marka</button>
+    <div id="brandMenu"></div>
+  </div>
+  <button id="tsoftDaily" type="button">T-Soft Veri Yok</button>
+  <button id="csvBtn" type="button">CSV Yükle</button>
+  <input id="csv" type="file" accept=".csv,text/csv" hidden>
+  <button id="aideDaily" type="button">Aide Veri Yok</button>
+  <textarea id="aideRaw" placeholder="Yapıştır"></textarea>
+  <button id="listBtn" type="button">Listele</button>
+</div>
+
+<div id="status"></div>
+<div id="out"></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
