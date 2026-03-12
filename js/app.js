@@ -13,7 +13,7 @@ import {
   headersFromRows,
 } from "./utils.js";
 
-const API_BASE = "https://robot-workstation.tvkapora.workers.dev";
+const API_BASE = "https://doretest.tvkapora.workers.dev";
 const $ = s => document.querySelector(s);
 
 const COMPEL_HDR = [
