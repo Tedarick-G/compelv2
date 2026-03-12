@@ -1,471 +1,212 @@
-import {
+// ./js/app.js
+
+import { TR } from "./utils.js";
+import { loadBrands, dailyMeta, dailyGet, dailySave, scanCompel } from "./api.js";
+import { createMatcher, normBrand } from "./match.js";
+import { createDepot } from "./depot.js";
+import { createRenderer } from "./render.js";
+
+import { AIDE_BRAND_SEED, TSOFT_BRAND_SEED } from "./brands.seed.js";
+
+// modules
+import { createUIChips } from "./ui/chips.js";
+import { createGuide } from "./ui/guide.js";
+import { createDaily } from "./ui/daily.js";
+import { createBrandUI } from "./ui/brand.js";
+import { createCompelMode } from "./modes/compel.js";
+import { createAllMode } from "./modes/all.js";
+import { toTitleCaseTR, buildCanonicalBrandList } from "./helpers/text.js";
+import { createTsoftModal } from "./ui/tsoftModal.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* 🔧 ESKİSİ
+const API_BASE = "https://robot-workstation.tvkapora.workers.dev";
+*/
+
+/* ✅ YENİ WORKER */
+const API_BASE = location.origin;
+
+// =========================
+// UI (chips/status)
+// =========================
+const ui = createUIChips({ $, TR });
+
+// =========================
+// Guide
+// =========================
+const guide = createGuide({ $, TR, getActiveSupplier: () => ACTIVE_SUPPLIER });
+
+// =========================
+// Daily
+// =========================
+const daily = createDaily({
+  $,
   TR,
-  T,
-  esc,
-  parseDelimited,
-  pickColumn,
-  readFileText,
-  ymdToDmy,
+  apiBase: API_BASE,
+  api: { dailyMeta, dailyGet, dailySave },
+  ui,
+  onAfterPick: () => guide.updateFromState(),
+});
+
+// =========================
+// T-Soft Modal
+// =========================
+createTsoftModal({ $ });
+
+// =========================
+// Brand UI
+// =========================
+let COMPEL_BRANDS_CACHE = null;
+
+const SUPPLIERS = {
+  COMPEL: "Compel",
+  ALL: "Tüm Markalar",
+  AKALIN: "Akalın",
+};
+
+let ACTIVE_SUPPLIER = SUPPLIERS.COMPEL;
+
+const brandUI = createBrandUI({
+  $,
+  TR,
+  ui,
+  guide,
   normBrand,
-  filterBySelectedBrand,
-  depotFromNoisyPaste,
-  findDelimitedHeaderLineIndex,
-  headersFromRows,
-} from "./utils.js";
-
-const API_BASE = "https://doretest.tvkapora.workers.dev";
-const $ = s => document.querySelector(s);
-
-const COMPEL_HDR = [
-  "Ana Başlık",
-  "Varyant Başlık",
-  "Başlık",
-  "Marka",
-  "Ürün Kodu",
-  "EAN",
-  "Stok",
-  "Fiyat",
-  "Link",
-  "Görsel",
-  "Ana Link",
-  "Ana Görsel",
-];
-
-const state = {
-  brands: [],
-  selBrands: new Set(),
-  meta: null,
-  selDaily: { tsoft: "", aide: "" },
-  readCache: { date: "", pass: "" },
-  saveCred: null,
-  logs: [],
-};
-
-function setStatus(t) {
-  $("#status").textContent = T(t);
-}
-
-function clearLog() {
-  state.logs = [];
-  $("#log").textContent = "";
-}
-
-function log(t) {
-  const x = T(t);
-  if (!x) return;
-  state.logs.push(x);
-  $("#log").textContent = state.logs.join("\n");
-}
-
-function setBusy(on) {
-  ["#brandBtn", "#tsoftDaily", "#csvBtn", "#csv", "#aideDaily", "#aideRaw", "#listBtn"].forEach(sel => {
-    const el = $(sel);
-    if (el) el.disabled = !!on;
-  });
-}
-
-async function api(path, opt = {}) {
-  const r = await fetch(API_BASE + path, opt);
-  const t = await r.text();
-  let j;
-  try { j = JSON.parse(t); } catch { j = t; }
-  if (!r.ok) throw new Error(j?.error || t || `HTTP ${r.status}`);
-  return j;
-}
-
-function buildSelectedBrandNormSet() {
-  const out = new Set();
-  for (const b of state.brands) {
-    if (!state.selBrands.has(b.id)) continue;
-    const k = normBrand(b.name);
-    if (k) out.add(k);
-  }
-  return out;
-}
-
-async function loadBrands() {
-  const data = await api("/api/brands");
-  state.brands = Array.isArray(data) ? data : [];
-  renderBrandMenu();
-}
-
-async function loadMeta() {
-  try {
-    state.meta = await api("/api/daily/meta");
-  } catch {
-    state.meta = null;
-  }
-  paintDailyBtns();
-}
-
-function pickHM(obj) {
-  return T(obj?.hm || obj?.time || "");
-}
-
-function dailyPick(kind) {
-  const label = kind === "tsoft" ? "T-Soft" : "Aide";
-  const t = state.meta?.today?.[kind];
-  if (t?.exists) {
-    return {
-      ymd: state.meta.today.ymd,
-      label: `${label} ${ymdToDmy(state.meta.today.ymd)} Tarihli Veri`,
-      hm: pickHM(t),
-    };
-  }
-  const y = state.meta?.yesterday?.[kind];
-  if (y?.exists) {
-    return {
-      ymd: state.meta.yesterday.ymd,
-      label: `${label} ${state.meta.yesterday.dmy} Tarihli Veri`,
-      hm: "",
-    };
-  }
-  return null;
-}
-
-function paintDailyBtns() {
-  for (const kind of ["tsoft", "aide"]) {
-    const btn = $(`#${kind}Daily`);
-    const pick = dailyPick(kind);
-    const label = kind === "tsoft" ? "T-Soft" : "Aide";
-    if (!btn) continue;
-    btn.disabled = !pick;
-    btn.textContent = !pick
-      ? `${label} Veri Yok`
-      : state.selDaily[kind] === pick.ymd
-        ? `${label} Seçildi`
-        : pick.hm
-          ? `${label} ${pick.hm}`
-          : pick.label;
-  }
-}
-
-function toggleDaily(kind) {
-  const pick = dailyPick(kind);
-  if (!pick) return;
-  state.selDaily[kind] = state.selDaily[kind] === pick.ymd ? "" : pick.ymd;
-  paintDailyBtns();
-}
-
-async function getReadPass(date) {
-  if (state.readCache.date === date && state.readCache.pass) return state.readCache.pass;
-  const p = prompt("Okuma şifresi:") || "";
-  if (!T(p)) throw new Error("Şifre girilmedi");
-  state.readCache = { date, pass: T(p) };
-  return state.readCache.pass;
-}
-
-function ensureSaveCred() {
-  if (state.saveCred?.adminPassword && state.saveCred?.readPassword) return state.saveCred;
-  const adminPassword = T(prompt("Yetkili Şifre:") || "");
-  const readPassword = T(prompt("Okuma Şifresi:") || "");
-  if (!adminPassword || !readPassword) throw new Error("Şifre girilmedi");
-  state.saveCred = { adminPassword, readPassword };
-  return state.saveCred;
-}
-
-async function saveDaily(kind, data) {
-  const c = ensureSaveCred();
-  await api("/api/daily/save", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      kind,
-      adminPassword: c.adminPassword,
-      readPassword: c.readPassword,
-      data,
+  toTitleCaseTR,
+  suppliers: SUPPLIERS,
+  getActiveSupplier: () => ACTIVE_SUPPLIER,
+  setActiveSupplier: (x) => (ACTIVE_SUPPLIER = x),
+  buildAllBrands: () =>
+    buildCanonicalBrandList({
+      normBrand,
+      tsoftSeed: TSOFT_BRAND_SEED,
+      aideSeed: AIDE_BRAND_SEED,
     }),
-  });
-  await loadMeta();
-}
+});
 
-function renderBrandMenu() {
-  const box = $("#brandMenu");
-  if (!box) return;
+// =========================
+// Depot + Matcher + Renderer
+// =========================
+const depot = createDepot({
+  ui,
+  normBrand,
+  onDepotLoaded: async () => {
+    daily.clearSelection("aide");
+    daily.paint();
 
-  box.innerHTML = state.brands
-    .map(b => `<label><input type="checkbox" value="${b.id}"> ${esc(b.name)}</label>`)
-    .join("");
-
-  box.onchange = e => {
-    const el = e.target;
-    if (!(el instanceof HTMLInputElement)) return;
-    const id = Number(el.value);
-    if (el.checked) state.selBrands.add(id);
-    else state.selBrands.delete(id);
-    $("#brandBtn").textContent = state.selBrands.size ? `Marka (${state.selBrands.size})` : "Marka";
-  };
-}
-
-function renderTable(target, title, hdr, rows) {
-  const el = typeof target === "string" ? $(target) : target;
-  if (!el) return;
-
-  const cols = Array.isArray(hdr) && hdr.length ? hdr : headersFromRows(rows || []);
-  const head = cols.map((h, i) => `<th>${esc(h)} <small>s${i + 1}</small></th>`).join("");
-  const body = (rows || []).map(r =>
-    `<tr>${cols.map(h => `<td>${esc(r[h] ?? "")}</td>`).join("")}</tr>`
-  ).join("");
-
-  el.innerHTML = `
-    <h3>${esc(title)}</h3>
-    <div class="meta">Satır: ${(rows || []).length} | Sütun: ${cols.length}</div>
-    <table>
-      <thead><tr>${head}</tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  `;
-}
-
-function clearTables() {
-  ["#l1", "#l2", "#l3"].forEach(sel => {
-    const el = $(sel);
-    if (el) el.innerHTML = "";
-  });
-}
-
-async function getTsoftRaw() {
-  if (state.selDaily.tsoft) {
-    const pass = await getReadPass(state.selDaily.tsoft);
-    const j = await api("/api/daily/get", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        date: state.selDaily.tsoft,
-        password: pass,
-        want: ["tsoft"],
-      }),
-    });
-    if (!j?.tsoft?.exists || !j?.tsoft?.data) throw new Error("T-Soft günlük veri yok");
-    return String(j.tsoft.data);
-  }
-
-  const f = $("#csv").files?.[0];
-  if (!f) throw new Error("T-Soft CSV seçilmedi");
-  return String(await readFileText(f));
-}
-
-async function getAideRaw() {
-  if (state.selDaily.aide) {
-    const pass = await getReadPass(state.selDaily.aide);
-    const j = await api("/api/daily/get", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        date: state.selDaily.aide,
-        password: pass,
-        want: ["aide"],
-      }),
-    });
-    if (!j?.aide?.exists || !j?.aide?.data) throw new Error("Aide günlük veri yok");
-    return String(j.aide.data);
-  }
-
-  const raw = $("#aideRaw").value;
-  if (!T(raw)) throw new Error("Aide yapıştırma alanı boş");
-  return raw;
-}
-
-function parseTsoftRawToFullRows(raw) {
-  const p = parseDelimited(raw);
-  if (!p.rows.length) throw new Error("T-Soft CSV boş");
-  const s = p.rows[0];
-  const brandCol = pickColumn(s, ["Marka"]);
-  if (!brandCol) throw new Error("T-Soft marka sütunu bulunamadı");
-  const rows = filterBySelectedBrand(p.rows, r => r[brandCol] || "", buildSelectedBrandNormSet());
-  return { hdr: p.hdr, rows };
-}
-
-function parseAideParsedTable(parsed) {
-  if (!parsed?.rows?.length) return null;
-
-  const s = parsed.rows[0];
-  const brandCol = pickColumn(s, ["Marka", "Brand"]);
-  const codeCol = pickColumn(s, ["Stok Kodu", "StokKodu", "STOK KODU", "Stock Code"]);
-
-  if (!brandCol || !codeCol) return null;
-
-  return {
-    hdr: parsed.hdr,
-    rows: filterBySelectedBrand(parsed.rows, r => r[brandCol] || "", buildSelectedBrandNormSet()),
-  };
-}
-
-function parseAideRawToFullRows(raw) {
-  const txt = String(raw || "");
-
-  const hdrLine = findDelimitedHeaderLineIndex(txt, [
-    ["Marka", "Brand"],
-    ["Stok Kodu", "StokKodu", "STOK KODU", "Stock Code"],
-  ]);
-
-  if (hdrLine >= 0) {
-    const parsed = parseAideParsedTable(parseDelimited(txt, { startLineIndex: hdrLine }));
-    if (parsed) return parsed;
-  }
-
-  try {
-    const parsed = parseAideParsedTable(parseDelimited(txt));
-    if (parsed) return parsed;
-  } catch {}
-
-  const noisy = depotFromNoisyPaste(txt);
-  return {
-    hdr: headersFromRows(noisy, ["Marka", "Model", "Stok Kodu", "Açıklama", "Stok", "Ambar", "Firma"]),
-    rows: filterBySelectedBrand(noisy, r => r["Marka"] || "", buildSelectedBrandNormSet()),
-  };
-}
-
-function parseCompelFullRows(items) {
-  const rows = filterBySelectedBrand(items || [], r => r["Marka"] || "", buildSelectedBrandNormSet());
-  return { hdr: COMPEL_HDR, rows };
-}
-
-async function readCompel(sel) {
-  const r = await fetch(API_BASE + "/api/compel/list", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ brands: sel }),
-  });
-
-  if (!r.ok) throw new Error(await r.text());
-  if (!r.body?.getReader) throw new Error("Compel stream alınamadı");
-
-  const rd = r.body.getReader();
-  const dec = new TextDecoder();
-  let buf = "", items = [];
-
-  clearLog();
-
-  for (;;) {
-    const { value, done } = await rd.read();
-    if (done) break;
-
-    buf += dec.decode(value, { stream: true });
-
-    let i;
-    while ((i = buf.indexOf("\n")) >= 0) {
-      const line = buf.slice(0, i).trim();
-      buf = buf.slice(i + 1);
-      if (!line) continue;
-
-      let m;
-      try { m = JSON.parse(line); } catch { continue; }
-      if (!m) continue;
-
-      if (m.type === "brand" || m.type === "page") {
-        setStatus(`Taranıyor: ${m.brand} (${m.page}/${m.pages})`);
-      } else if (m.type === "item" && m.data) {
-        items.push(m.data);
-      } else if (m.type === "error") {
-        log(m.message || "Hata");
-      }
+    if (ACTIVE_SUPPLIER === SUPPLIERS.COMPEL && matcher.hasData()) {
+      matcher.runMatch();
+      compelMode.refresh();
     }
-  }
 
-  return items;
-}
+    applySupplierUi();
 
-async function list() {
-  try {
-    const sel = state.brands.filter(b => state.selBrands.has(b.id));
-    if (!sel.length) throw new Error("Compel marka seç");
+    await daily.trySaveIfChecked({
+      kind: "aide",
+      getRaw: () => depot.getLastRaw() || "",
+    });
 
-    clearTables();
-    clearLog();
-    setBusy(true);
-    setStatus("Okunuyor...");
-
-    const [tsoftRaw, aideRaw, compelItems] = await Promise.all([
-      getTsoftRaw(),
-      getAideRaw(),
-      readCompel(sel),
-    ]);
-
-    const l1 = parseCompelFullRows(compelItems);
-    const l2 = parseTsoftRawToFullRows(tsoftRaw);
-    const l3 = parseAideRawToFullRows(aideRaw);
-
-    renderTable("#l1", "Compel Tüm Kolonlar", l1.hdr, l1.rows);
-    renderTable("#l2", "T-Soft Tüm Kolonlar", l2.hdr, l2.rows);
-    renderTable("#l3", "Aide Tüm Kolonlar", l3.hdr, l3.rows);
-
-    clearLog();
-    setStatus("");
-  } catch (e) {
-    const msg = e?.message || String(e);
-    if (/unauthorized/i.test(msg)) state.readCache = { date: "", pass: "" };
-    console.error(e);
-    setStatus(msg);
-    log(msg);
-  } finally {
-    setBusy(false);
-  }
-}
-
-$("#brandBtn").onclick = () => $("#brandWrap").classList.toggle("open");
-
-document.addEventListener("click", e => {
-  const wrap = $("#brandWrap");
-  if (wrap && !wrap.contains(e.target)) wrap.classList.remove("open");
+    guide.updateFromState();
+  },
 });
 
-$("#tsoftDaily").onclick = () => toggleDaily("tsoft");
-$("#aideDaily").onclick = () => toggleDaily("aide");
-$("#csvBtn").onclick = () => $("#csv").click();
-
-$("#csv").onchange = () => {
-  if ($("#csv").files?.[0]) {
-    state.selDaily.tsoft = "";
-    paintDailyBtns();
-  }
-};
-
-$("#aideRaw").addEventListener("input", () => {
-  if (T($("#aideRaw").value)) {
-    state.selDaily.aide = "";
-    paintDailyBtns();
-  }
+const matcher = createMatcher({
+  getDepotAgg: () => depot.agg,
+  isDepotReady: () => depot.isReady(),
 });
 
-$("#tsoftSave").onchange = async e => {
-  try {
-    if (!e.target.checked) return;
-    const f = $("#csv").files?.[0];
-    if (!f) throw new Error("Önce T-Soft CSV seç");
-    setStatus("T-Soft kaydediliyor...");
-    await saveDaily("tsoft", String(await readFileText(f)));
-    setStatus("T-Soft kaydedildi");
-  } catch (err) {
-    setStatus(err?.message || String(err));
-  } finally {
-    e.target.checked = false;
-  }
-};
+const renderer = createRenderer({ ui });
 
-$("#aideSave").onchange = async e => {
-  try {
-    if (!e.target.checked) return;
-    const raw = T($("#aideRaw").value);
-    if (!raw) throw new Error("Önce Aide verisi yapıştır");
-    setStatus("Aide kaydediliyor...");
-    await saveDaily("aide", raw);
-    setStatus("Aide kaydedildi");
-  } catch (err) {
-    setStatus(err?.message || String(err));
-  } finally {
-    e.target.checked = false;
-  }
-};
+// =========================
+// Modes
+// =========================
+const compelMode = createCompelMode({
+  $,
+  TR,
+  apiBase: API_BASE,
+  api: { scanCompel, dailyGet, dailySave },
+  ui,
+  depot,
+  matcher,
+  renderer,
+  brandUI,
+  daily,
+  guide,
+  normBrand,
+});
 
-$("#listBtn").onclick = list;
+const allMode = createAllMode({
+  $,
+  TR,
+  ui,
+  depot,
+  renderer,
+  brandUI,
+  daily,
+  guide,
+  normBrand,
+  toTitleCaseTR,
+});
 
-(async () => {
+// =========================
+// Brand init
+// =========================
+async function initBrandsCompel() {
+  brandUI.setBrandPrefix("Hazır");
+  brandUI.setLoading(true);
+
   try {
-    await loadBrands();
-    await loadMeta();
+    const data = await loadBrands(API_BASE);
+    COMPEL_BRANDS_CACHE = data;
+
+    if (ACTIVE_SUPPLIER === SUPPLIERS.COMPEL)
+      brandUI.setBrands(data);
+
   } catch (e) {
     console.error(e);
-    setStatus(e?.message || String(e));
+    brandUI.setBrandStatusText("Markalar yüklenemedi (API).");
+  } finally {
+    brandUI.setLoading(false);
+    brandUI.render();
+    applySupplierUi();
   }
-})();
+}
+
+// =========================
+// GO button
+// =========================
+async function handleGo() {
+
+  if (!brandUI.getSelectedIds().size) {
+    alert("Lütfen bir marka seçin");
+    guide.updateFromState();
+    return;
+  }
+
+  let ok = false;
+
+  if (ACTIVE_SUPPLIER === SUPPLIERS.ALL)
+    ok = await allMode.generate();
+  else
+    ok = await compelMode.generate();
+
+  if (ok) guide.setStep("done");
+  else guide.updateFromState();
+}
+
+$("go") && ($("go").onclick = handleGo);
+
+// =========================
+// init
+// =========================
+brandUI.ensureListHeader();
+brandUI.ensureSearchBar();
+
+guide.setStep("brand");
+
+if (ACTIVE_SUPPLIER === SUPPLIERS.COMPEL)
+  initBrandsCompel();
+
+daily.refreshMeta();
+guide.updateFromState();
