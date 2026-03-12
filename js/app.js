@@ -1,4 +1,5 @@
 import {
+  TR,
   T,
   esc,
   parseDelimited,
@@ -8,10 +9,11 @@ import {
   normBrand,
   filterBySelectedBrand,
   depotFromNoisyPaste,
+  findDelimitedHeaderLineIndex,
+  headersFromRows,
 } from "./utils.js";
 
 const API_BASE = "https://robot-workstation.tvkapora.workers.dev";
-const COMPEL_BRANDS_URL = "https://compel.com.tr/markalar";
 const $ = s => document.querySelector(s);
 
 const COMPEL_HDR = [
@@ -56,18 +58,7 @@ function log(t) {
 }
 
 function setBusy(on) {
-  [
-    "#brandBtn",
-    "#tsoftDaily",
-    "#csvBtn",
-    "#csv",
-    "#aideDaily",
-    "#aideRaw",
-    "#listBtn",
-    "#oneUrl",
-    "#oneExpand",
-    "#oneBtn",
-  ].forEach(sel => {
+  ["#brandBtn", "#tsoftDaily", "#csvBtn", "#csv", "#aideDaily", "#aideRaw", "#listBtn"].forEach(sel => {
     const el = $(sel);
     if (el) el.disabled = !!on;
   });
@@ -76,14 +67,8 @@ function setBusy(on) {
 async function api(path, opt = {}) {
   const r = await fetch(API_BASE + path, opt);
   const t = await r.text();
-
   let j;
-  try {
-    j = JSON.parse(t);
-  } catch {
-    j = t;
-  }
-
+  try { j = JSON.parse(t); } catch { j = t; }
   if (!r.ok) throw new Error(j?.error || t || `HTTP ${r.status}`);
   return j;
 }
@@ -99,17 +84,8 @@ function buildSelectedBrandNormSet() {
 }
 
 async function loadBrands() {
-  const data = await api(`/api/compel/brands?u=${encodeURIComponent(COMPEL_BRANDS_URL)}`);
-  const arr = Array.isArray(data?.brands) ? data.brands : [];
-
-  state.brands = arr.map((b, i) => ({
-    id: String(b.url || `brand-${i}`),
-    name: T(b.brand || b.title),
-    url: T(b.url),
-    image: T(b.image),
-    productCount: Number.isFinite(Number(b.productCount)) ? Number(b.productCount) : 0,
-  }));
-
+  const data = await api("/api/brands");
+  state.brands = Array.isArray(data) ? data : [];
   renderBrandMenu();
 }
 
@@ -131,21 +107,19 @@ function dailyPick(kind) {
   const t = state.meta?.today?.[kind];
   if (t?.exists) {
     return {
-      ymd: state.meta?.today?.ymd || "",
-      label: `${label} ${ymdToDmy(state.meta?.today?.ymd || "")} Tarihli Veri`,
+      ymd: state.meta.today.ymd,
+      label: `${label} ${ymdToDmy(state.meta.today.ymd)} Tarihli Veri`,
       hm: pickHM(t),
     };
   }
-
   const y = state.meta?.yesterday?.[kind];
   if (y?.exists) {
     return {
-      ymd: state.meta?.yesterday?.ymd || "",
-      label: `${label} ${state.meta?.yesterday?.dmy || ""} Tarihli Veri`,
+      ymd: state.meta.yesterday.ymd,
+      label: `${label} ${state.meta.yesterday.dmy} Tarihli Veri`,
       hm: "",
     };
   }
-
   return null;
 }
 
@@ -155,7 +129,6 @@ function paintDailyBtns() {
     const pick = dailyPick(kind);
     const label = kind === "tsoft" ? "T-Soft" : "Aide";
     if (!btn) continue;
-
     btn.disabled = !pick;
     btn.textContent = !pick
       ? `${label} Veri Yok`
@@ -184,12 +157,9 @@ async function getReadPass(date) {
 
 function ensureSaveCred() {
   if (state.saveCred?.adminPassword && state.saveCred?.readPassword) return state.saveCred;
-
   const adminPassword = T(prompt("Yetkili Şifre:") || "");
   const readPassword = T(prompt("Okuma Şifresi:") || "");
-
   if (!adminPassword || !readPassword) throw new Error("Şifre girilmedi");
-
   state.saveCred = { adminPassword, readPassword };
   return state.saveCred;
 }
@@ -214,20 +184,15 @@ function renderBrandMenu() {
   if (!box) return;
 
   box.innerHTML = state.brands
-    .map(b => {
-      const countTxt = b.productCount ? ` (${b.productCount})` : "";
-      return `<label><input type="checkbox" value="${esc(b.id)}"> ${esc(b.name)}${esc(countTxt)}</label>`;
-    })
+    .map(b => `<label><input type="checkbox" value="${b.id}"> ${esc(b.name)}</label>`)
     .join("");
 
   box.onchange = e => {
     const el = e.target;
     if (!(el instanceof HTMLInputElement)) return;
-
-    const id = el.value;
+    const id = Number(el.value);
     if (el.checked) state.selBrands.add(id);
     else state.selBrands.delete(id);
-
     $("#brandBtn").textContent = state.selBrands.size ? `Marka (${state.selBrands.size})` : "Marka";
   };
 }
@@ -236,14 +201,15 @@ function renderTable(target, title, hdr, rows) {
   const el = typeof target === "string" ? $(target) : target;
   if (!el) return;
 
-  const head = (hdr || []).map((h, i) => `<th>${esc(h)} <small>s${i + 1}</small></th>`).join("");
+  const cols = Array.isArray(hdr) && hdr.length ? hdr : headersFromRows(rows || []);
+  const head = cols.map((h, i) => `<th>${esc(h)} <small>s${i + 1}</small></th>`).join("");
   const body = (rows || []).map(r =>
-    `<tr>${hdr.map(h => `<td>${esc(r[h] ?? "")}</td>`).join("")}</tr>`
+    `<tr>${cols.map(h => `<td>${esc(r[h] ?? "")}</td>`).join("")}</tr>`
   ).join("");
 
   el.innerHTML = `
     <h3>${esc(title)}</h3>
-    <div class="meta">Satır: ${(rows || []).length} | Sütun: ${(hdr || []).length}</div>
+    <div class="meta">Satır: ${(rows || []).length} | Sütun: ${cols.length}</div>
     <table>
       <thead><tr>${head}</tr></thead>
       <tbody>${body}</tbody>
@@ -255,77 +221,6 @@ function clearTables() {
   ["#l1", "#l2", "#l3"].forEach(sel => {
     const el = $(sel);
     if (el) el.innerHTML = "";
-  });
-}
-
-function compelBaseUrl(u) {
-  const v = T(u);
-  if (!v) return "";
-  try {
-    const x = new URL(v);
-    x.search = "";
-    x.hash = "";
-    return x.toString();
-  } catch {
-    return v.split("#")[0].split("?")[0];
-  }
-}
-
-function asTextStock(v) {
-  return v == null ? "" : String(v);
-}
-
-function productToCompelRows(product) {
-  const baseTitle = T(product?.title);
-  const brand = T(product?.brand);
-  const productUrl = T(product?.url);
-  const baseUrl = compelBaseUrl(productUrl);
-  const baseImage = T(product?.image);
-  const price = T(product?.price);
-  const stock = asTextStock(product?.stock);
-  const productCode = T(product?.productCode);
-  const ean = T(product?.ean);
-  const variants = Array.isArray(product?.variants) ? product.variants : [];
-
-  if (!variants.length) {
-    return [{
-      "Ana Başlık": baseTitle,
-      "Varyant Başlık": "",
-      "Başlık": baseTitle,
-      "Marka": brand,
-      "Ürün Kodu": productCode,
-      "EAN": ean,
-      "Stok": stock,
-      "Fiyat": price,
-      "Link": productUrl || baseUrl,
-      "Görsel": baseImage,
-      "Ana Link": baseUrl || productUrl,
-      "Ana Görsel": baseImage,
-    }];
-  }
-
-  return variants.map(v => {
-    const variantType = T(v?.variantType);
-    const variantLabel = T(v?.variantLabel);
-    const variantUrl = T(v?.variantUrl) || productUrl || baseUrl;
-    const variantTitle = [baseTitle, variantLabel].filter(Boolean).join(" - ");
-    const variantHead = [variantType, variantLabel].filter(Boolean).join(" : ");
-    const isSelected = variantUrl === productUrl;
-
-    return {
-      "Ana Başlık": baseTitle,
-      "Varyant Başlık": variantHead || variantLabel,
-      "Başlık": variantTitle || baseTitle,
-      "Marka": brand,
-      "Ürün Kodu": isSelected ? productCode : "",
-      "EAN": isSelected ? ean : "",
-      "Stok": isSelected ? stock : "",
-      "Fiyat": isSelected ? price : "",
-      "Link": variantUrl,
-      "Görsel": isSelected ? baseImage : "",
-      "Ana Link": baseUrl || productUrl,
-      "Ana Görsel": baseImage,
-    };
   });
 }
 
@@ -341,7 +236,6 @@ async function getTsoftRaw() {
         want: ["tsoft"],
       }),
     });
-
     if (!j?.tsoft?.exists || !j?.tsoft?.data) throw new Error("T-Soft günlük veri yok");
     return String(j.tsoft.data);
   }
@@ -363,7 +257,6 @@ async function getAideRaw() {
         want: ["aide"],
       }),
     });
-
     if (!j?.aide?.exists || !j?.aide?.data) throw new Error("Aide günlük veri yok");
     return String(j.aide.data);
   }
@@ -376,96 +269,101 @@ async function getAideRaw() {
 function parseTsoftRawToFullRows(raw) {
   const p = parseDelimited(raw);
   if (!p.rows.length) throw new Error("T-Soft CSV boş");
-
   const s = p.rows[0];
   const brandCol = pickColumn(s, ["Marka"]);
   if (!brandCol) throw new Error("T-Soft marka sütunu bulunamadı");
-
   const rows = filterBySelectedBrand(p.rows, r => r[brandCol] || "", buildSelectedBrandNormSet());
   return { hdr: p.hdr, rows };
 }
 
+function parseAideParsedTable(parsed) {
+  if (!parsed?.rows?.length) return null;
+
+  const s = parsed.rows[0];
+  const brandCol = pickColumn(s, ["Marka", "Brand"]);
+  const codeCol = pickColumn(s, ["Stok Kodu", "StokKodu", "STOK KODU", "Stock Code"]);
+
+  if (!brandCol || !codeCol) return null;
+
+  return {
+    hdr: parsed.hdr,
+    rows: filterBySelectedBrand(parsed.rows, r => r[brandCol] || "", buildSelectedBrandNormSet()),
+  };
+}
+
 function parseAideRawToFullRows(raw) {
   const txt = String(raw || "");
-  let rows = [];
-  let hdr = [];
+
+  const hdrLine = findDelimitedHeaderLineIndex(txt, [
+    ["Marka", "Brand"],
+    ["Stok Kodu", "StokKodu", "STOK KODU", "Stock Code"],
+  ]);
+
+  if (hdrLine >= 0) {
+    const parsed = parseAideParsedTable(parseDelimited(txt, { startLineIndex: hdrLine }));
+    if (parsed) return parsed;
+  }
 
   try {
-    const p = parseDelimited(txt);
-    if (p.rows.length) {
-      const s = p.rows[0];
-      const brandCol = pickColumn(s, ["Marka", "Brand"]);
-      const codeCol = pickColumn(s, ["Stok Kodu", "StokKodu", "STOK KODU", "Stock Code"]);
-
-      if (brandCol && codeCol) {
-        rows = filterBySelectedBrand(p.rows, r => r[brandCol] || "", buildSelectedBrandNormSet());
-        hdr = p.hdr;
-      }
-    }
+    const parsed = parseAideParsedTable(parseDelimited(txt));
+    if (parsed) return parsed;
   } catch {}
-
-  if (rows.length) return { hdr, rows };
 
   const noisy = depotFromNoisyPaste(txt);
   return {
-    hdr: ["Marka", "Model", "Stok Kodu", "Açıklama", "Stok", "Ambar"],
+    hdr: headersFromRows(noisy, ["Marka", "Model", "Stok Kodu", "Açıklama", "Stok", "Ambar", "Firma"]),
     rows: filterBySelectedBrand(noisy, r => r["Marka"] || "", buildSelectedBrandNormSet()),
   };
 }
 
 function parseCompelFullRows(items) {
-  const flat = [];
-  for (const item of items || []) {
-    flat.push(...productToCompelRows(item));
-  }
-
-  const rows = filterBySelectedBrand(flat, r => r["Marka"] || "", buildSelectedBrandNormSet());
+  const rows = filterBySelectedBrand(items || [], r => r["Marka"] || "", buildSelectedBrandNormSet());
   return { hdr: COMPEL_HDR, rows };
 }
 
 async function readCompel(sel) {
-  const items = [];
+  const r = await fetch(API_BASE + "/api/compel/list", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ brands: sel }),
+  });
+
+  if (!r.ok) throw new Error(await r.text());
+  if (!r.body?.getReader) throw new Error("Compel stream alınamadı");
+
+  const rd = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "", items = [];
+
   clearLog();
 
-  for (let i = 0; i < sel.length; i++) {
-    const brand = sel[i];
-    setStatus(`Taranıyor: ${brand.name} (${i + 1}/${sel.length})`);
-    log(`${brand.name} okunuyor...`);
+  for (;;) {
+    const { value, done } = await rd.read();
+    if (done) break;
 
-    try {
-      const j = await api(`/api/compel/brand?u=${encodeURIComponent(brand.url)}`);
-      const products = Array.isArray(j?.products) ? j.products : [];
-      items.push(...products);
-      log(`${brand.name} tamam (${products.length})`);
-    } catch (err) {
-      log(`${brand.name} hata: ${err?.message || String(err)}`);
+    buf += dec.decode(value, { stream: true });
+
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 1);
+      if (!line) continue;
+
+      let m;
+      try { m = JSON.parse(line); } catch { continue; }
+      if (!m) continue;
+
+      if (m.type === "brand" || m.type === "page") {
+        setStatus(`Taranıyor: ${m.brand} (${m.page}/${m.pages})`);
+      } else if (m.type === "item" && m.data) {
+        items.push(m.data);
+      } else if (m.type === "error") {
+        log(m.message || "Hata");
+      }
     }
   }
 
-  if (!items.length) throw new Error("Compel ürünleri alınamadı");
   return items;
-}
-
-async function testOne() {
-  try {
-    const inputUrl = T($("#oneUrl").value);
-    if (!inputUrl) throw new Error("Ürün linki gir");
-
-    setBusy(true);
-    setStatus("Ürün test ediliyor...");
-
-    const expand = $("#oneExpand").checked ? "1" : "0";
-    const j = await api(`/api/compel/one?u=${encodeURIComponent(inputUrl)}&expand=${expand}`);
-
-    $("#oneOut").textContent = JSON.stringify(j, null, 2);
-    setStatus("Ürün testi hazır");
-  } catch (e) {
-    const msg = e?.message || String(e);
-    $("#oneOut").textContent = msg;
-    setStatus(msg);
-  } finally {
-    setBusy(false);
-  }
 }
 
 async function list() {
@@ -492,7 +390,8 @@ async function list() {
     renderTable("#l2", "T-Soft Tüm Kolonlar", l2.hdr, l2.rows);
     renderTable("#l3", "Aide Tüm Kolonlar", l3.hdr, l3.rows);
 
-    setStatus("Hazır");
+    clearLog();
+    setStatus("");
   } catch (e) {
     const msg = e?.message || String(e);
     if (/unauthorized/i.test(msg)) state.readCache = { date: "", pass: "" };
@@ -514,7 +413,6 @@ document.addEventListener("click", e => {
 $("#tsoftDaily").onclick = () => toggleDaily("tsoft");
 $("#aideDaily").onclick = () => toggleDaily("aide");
 $("#csvBtn").onclick = () => $("#csv").click();
-$("#oneBtn").onclick = testOne;
 
 $("#csv").onchange = () => {
   if ($("#csv").files?.[0]) {
@@ -533,10 +431,8 @@ $("#aideRaw").addEventListener("input", () => {
 $("#tsoftSave").onchange = async e => {
   try {
     if (!e.target.checked) return;
-
     const f = $("#csv").files?.[0];
     if (!f) throw new Error("Önce T-Soft CSV seç");
-
     setStatus("T-Soft kaydediliyor...");
     await saveDaily("tsoft", String(await readFileText(f)));
     setStatus("T-Soft kaydedildi");
@@ -550,10 +446,8 @@ $("#tsoftSave").onchange = async e => {
 $("#aideSave").onchange = async e => {
   try {
     if (!e.target.checked) return;
-
     const raw = T($("#aideRaw").value);
     if (!raw) throw new Error("Önce Aide verisi yapıştır");
-
     setStatus("Aide kaydediliyor...");
     await saveDaily("aide", raw);
     setStatus("Aide kaydedildi");
