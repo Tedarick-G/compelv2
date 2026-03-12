@@ -8,7 +8,7 @@
 body{font:14px system-ui;margin:12px}
 .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 #brandWrap{position:relative}
-#brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:300px;max-height:320px;overflow:auto}
+#brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
 #brandWrap.open #brandMenu{display:block}
 #brandMenu label{display:block;white-space:nowrap}
 button,input,textarea{font:inherit;padding:6px 12px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box;height:36px;margin:0;vertical-align:middle}
@@ -16,9 +16,9 @@ textarea{width:120px;min-width:120px;max-width:120px;min-height:36px;max-height:
 textarea::placeholder{color:#111;opacity:1}
 .chk{display:inline-flex;align-items:center;justify-content:center;width:36px;min-width:36px;height:36px;border:1px solid #bbb;background:#f3f3f3;box-sizing:border-box;margin:0}
 .chk input{margin:0}
-#oneUrl{width:min(760px,100%);min-width:280px;flex:1;background:#fff}
 #status{margin:10px 0}
-#log,#oneOut{margin:8px 0;white-space:pre-wrap;font:12px ui-monospace,monospace;border:1px solid #ccc;padding:6px;min-height:18px}
+#log{margin:8px 0;white-space:pre-wrap;font:12px ui-monospace,monospace;border:1px solid #ccc;padding:6px;min-height:18px}
+#status:empty,#log:empty{display:none}
 .block{margin:14px 0}
 table{border-collapse:collapse;width:100%;margin-top:6px}
 th,td{border:1px solid #ccc;padding:4px;vertical-align:top;text-align:left}
@@ -48,21 +48,6 @@ h3{margin:0 0 4px}
 
 <div id="status"></div>
 <pre id="log"></pre>
-
-<div class="block">
-  <h3>Compel Tek Ürün Test</h3>
-  <div class="top">
-    <input
-      id="oneUrl"
-      type="text"
-      placeholder="Compel ürün linki yapıştır"
-      value="https://compel.com.tr/mikrofonlar/1797-rode-wireless-micro.html#/8-renk-beyaz/53-baglanti_tipi-lightning"
-    >
-    <label class="chk" title="expand=1"><input id="oneExpand" type="checkbox" checked></label>
-    <button id="oneBtn" type="button">Ürün Test</button>
-  </div>
-  <pre id="oneOut"></pre>
-</div>
 
 <div id="l1" class="block"></div>
 <div id="l2" class="block"></div>
