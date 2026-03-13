@@ -73,7 +73,7 @@ j.forEach(x=>{
 let d=document.createElement('div')
 
 let h=document.createElement('div')
-h.textContent=x.name+' : '+x.old+' / '+x.now+(x.diff>0?' [ '+x.diff+' Yeni Ürün ]':x.diff<0?' [ '+(-x.diff)+' Eksik Ürün ]':'')
+h.textContent=x.name+' : '+x.old+' / '+x.now
 d.appendChild(h)
 
 for(let i=1;i<=Math.ceil((x.now||x.old)/20);i++){
@@ -86,35 +86,29 @@ let a=document.createElement('a')
 a.href=u
 a.textContent=u
 a.target='_blank'
-
 p.appendChild(a)
 
 let btn=document.createElement('div')
 btn.style.cursor='pointer'
-btn.style.margin='3px 0 3px 0'
 btn.textContent='▼ Ürünler'
 
 let box=document.createElement('div')
-box.style.margin='0 0 8px 15px'
 
 btn.onclick=async()=>{
 
 if(btn.dataset.open){
-
 btn.dataset.open=''
 btn.textContent='▼ Ürünler'
 box.innerHTML=''
 return
-
 }
 
 btn.textContent='Yükleniyor...'
 
 let rr=await fetch('https://13.tvkapora.workers.dev?products='+encodeURIComponent(u))
-
 let jj=await rr.json()
 
-box.innerHTML=jj.map(v=>'<a href="'+v+'" target=_blank>'+v+'</a>').join('<br>')||'ürün yok'
+box.innerHTML=jj.map(v=>'<a href="'+v+'" target=_blank>'+v+'</a>').join('<br>')
 
 btn.dataset.open=1
 btn.textContent='▲ Ürünleri Gizle'
@@ -127,8 +121,6 @@ p.appendChild(box)
 d.appendChild(p)
 
 }
-
-d.appendChild(document.createElement('br'))
 
 o.appendChild(d)
 
