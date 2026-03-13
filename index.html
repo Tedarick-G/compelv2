@@ -39,7 +39,7 @@
 <script>
 async function f(){
 let s=[...m.selectedOptions].map(x=>x.value)
-let r=await fetch("WORKER_URL",{method:"POST",body:JSON.stringify(s)})
+let r=await fetch("https://13.tvkapora.workers.dev",{method:"POST",body:JSON.stringify(s)})
 o.textContent=await r.text()
 }
 </script>
