@@ -1,193 +1,303 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Varyant Test</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Compel Ürün Test</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f7f7f7;
-      color: #222;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 24px;
     }
 
-    .product-card {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 16px;
+    .wrap {
       max-width: 900px;
       margin: 0 auto;
     }
 
-    .product-link {
-      display: inline-block;
-      margin-bottom: 12px;
-      word-break: break-all;
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
     }
 
-    .variant-toggle {
-      display: inline-block;
-      cursor: pointer;
-      user-select: none;
-      font-weight: bold;
-      color: #0b57d0;
-      margin: 10px 0;
-    }
-
-    .variant-box {
-      margin-top: 10px;
+    .toolbar input {
+      flex: 1;
       padding: 12px;
-      border: 1px solid #e2e2e2;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #fff;
       border-radius: 8px;
-      background: #fafafa;
+    }
+
+    .toolbar button {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 8px;
+      background: #2d6cdf;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .product-card {
+      background: #1a1a1a;
+      border: 1px solid #2b2b2b;
+      border-radius: 14px;
+      overflow: hidden;
       display: none;
     }
 
-    .variant-box.open {
+    .product-main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .product-image img {
+      width: 100%;
+      border-radius: 12px;
       display: block;
+      background: #222;
     }
 
-    .variant-status {
-      margin-bottom: 10px;
-      font-size: 14px;
-      color: #666;
+    .product-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
 
-    .variant-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    .product-price {
+      font-size: 22px;
+      color: #7CFC98;
+      margin-bottom: 12px;
     }
 
-    .variant-list li {
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
+    .product-desc {
+      color: #ccc;
+      line-height: 1.5;
+      margin-bottom: 18px;
     }
 
-    .variant-list li:last-child {
-      border-bottom: none;
+    .toggle-row {
+      padding: 14px 18px;
+      border-top: 1px solid #2b2b2b;
+      cursor: pointer;
+      user-select: none;
+      background: #151515;
+      font-weight: 700;
     }
 
-    .variant-list a {
+    .toggle-row:hover {
+      background: #1d1d1d;
+    }
+
+    .variants-box {
+      display: none;
+      padding: 14px 18px 18px;
+      border-top: 1px solid #2b2b2b;
+      background: #121212;
+    }
+
+    .variants-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .variant-item {
+      background: #1b1b1b;
+      border: 1px solid #2f2f2f;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .variant-item a {
+      color: #8ab4ff;
+      text-decoration: none;
       word-break: break-all;
     }
 
+    .muted {
+      color: #888;
+    }
+
     .error {
-      color: #b00020;
+      color: #ff7b7b;
+      margin-top: 10px;
+    }
+
+    .loading {
+      color: #ccc;
+    }
+
+    @media (max-width: 700px) {
+      .product-main {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="product-card">
-    <h2>Ürün</h2>
-
-    <a
-      class="product-link"
-      id="productLink"
-      href="https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html"
-      target="_blank"
-    >
-      https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html
-    </a>
-
-    <div
-      class="variant-toggle"
-      id="variantToggle"
-      data-product-url="https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html"
-    >
-      ▼ Varyantlar
+  <div class="wrap">
+    <div class="toolbar">
+      <input
+        id="productUrl"
+        type="text"
+        placeholder="Compel ürün linki yapıştır"
+        value="https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html"
+      />
+      <button id="loadBtn">Getir</button>
     </div>
 
-    <div class="variant-box" id="variantBox">
-      <div class="variant-status" id="variantStatus">Hazır</div>
-      <ul class="variant-list" id="variantList"></ul>
+    <div id="errorBox" class="error"></div>
+
+    <div id="productCard" class="product-card">
+      <div class="product-main">
+        <div class="product-image">
+          <img id="productImage" src="" alt="">
+        </div>
+
+        <div class="product-info">
+          <div id="productTitle" class="product-title"></div>
+          <div id="productPrice" class="product-price"></div>
+          <div id="productDesc" class="product-desc"></div>
+        </div>
+      </div>
+
+      <div id="variantsToggle" class="toggle-row">▼ Varyantlar</div>
+
+      <div id="variantsBox" class="variants-box">
+        <div id="variantsContent" class="variants-list"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    const WORKER_URL = "https://13.tvkapora.workers.dev//";
+    const https://13.tvkapora.workers.dev/ = "https://13.tvkapora.workers.dev/";
 
-    const toggle = document.getElementById("variantToggle");
-    const box = document.getElementById("variantBox");
-    const statusEl = document.getElementById("variantStatus");
-    const listEl = document.getElementById("variantList");
+    const productUrlInput = document.getElementById("productUrl");
+    const loadBtn = document.getElementById("loadBtn");
+    const errorBox = document.getElementById("errorBox");
 
-    let loaded = false;
-    let loading = false;
+    const productCard = document.getElementById("productCard");
+    const productImage = document.getElementById("productImage");
+    const productTitle = document.getElementById("productTitle");
+    const productPrice = document.getElementById("productPrice");
+    const productDesc = document.getElementById("productDesc");
 
-    toggle.addEventListener("click", async function () {
-      box.classList.toggle("open");
+    const variantsToggle = document.getElementById("variantsToggle");
+    const variantsBox = document.getElementById("variantsBox");
+    const variantsContent = document.getElementById("variantsContent");
 
-      if (!box.classList.contains("open")) {
-        toggle.textContent = "▼ Varyantlar";
+    let currentProductUrl = "";
+    let variantsLoaded = false;
+    let variantsOpen = false;
+
+    loadBtn.addEventListener("click", loadProduct);
+
+    variantsToggle.addEventListener("click", async () => {
+      if (!currentProductUrl) return;
+
+      variantsOpen = !variantsOpen;
+      variantsBox.style.display = variantsOpen ? "block" : "none";
+      variantsToggle.textContent = variantsOpen ? "▲ Varyantlar" : "▼ Varyantlar";
+
+      if (variantsOpen && !variantsLoaded) {
+        await loadVariants(currentProductUrl);
+      }
+    });
+
+    async function loadProduct() {
+      const url = productUrlInput.value.trim();
+      errorBox.textContent = "";
+      productCard.style.display = "none";
+      variantsLoaded = false;
+      variantsOpen = false;
+      variantsBox.style.display = "none";
+      variantsToggle.textContent = "▼ Varyantlar";
+      variantsContent.innerHTML = "";
+
+      if (!url) {
+        errorBox.textContent = "Ürün linki gir.";
         return;
       }
 
-      toggle.textContent = "▲ Varyantlar";
-
-      if (loaded || loading) return;
-
-      loading = true;
-      statusEl.textContent = "Varyantlar yükleniyor...";
-      listEl.innerHTML = "";
-
       try {
-        const productUrl = toggle.dataset.productUrl;
-        const endpoint = `${https://13.tvkapora.workers.dev}?variants=${encodeURIComponent(productUrl)}`;
-
-        const resp = await fetch(endpoint);
-        const data = await resp.json();
+        const apiUrl = `${https://13.tvkapora.workers.dev/}?url=${encodeURIComponent(url)}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
 
         if (!data.ok) {
-          statusEl.innerHTML = `<span class="error">Hata: ${data.error || "Bilinmeyen hata"}</span>`;
-          loading = false;
-          return;
+          throw new Error(data.error || "Ürün alınamadı");
         }
 
-        const variants = Array.isArray(data.variants) ? data.variants : [];
+        currentProductUrl = url;
+        productTitle.textContent = data.title || "-";
+        productPrice.textContent = data.price || "-";
+        productDesc.textContent = data.description || "-";
+        productImage.src = data.image || "";
+        productImage.alt = data.title || "Ürün";
 
-        if (!variants.length) {
-          statusEl.textContent = "Varyant bulunamadı.";
-          loaded = true;
-          loading = false;
-          return;
+        productCard.style.display = "block";
+      } catch (err) {
+        errorBox.textContent = `Hata: ${err.message}`;
+      }
+    }
+
+    async function loadVariants(productUrl) {
+      variantsContent.innerHTML = `<div class="loading">Yükleniyor...</div>`;
+
+      try {
+        const apiUrl = `${WORKER_URL}?variants=${encodeURIComponent(productUrl)}`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (!data.variants || !Array.isArray(data.variants)) {
+          throw new Error("Varyant verisi yok");
         }
 
-        statusEl.textContent = `${variants.length} varyant bulundu`;
+        variantsContent.innerHTML = "";
 
-        for (const item of variants) {
-          const li = document.createElement("li");
-
-          const title = document.createElement("div");
-          title.textContent = `${item.color || "Bilinmeyen"} (attribute: ${item.attribute})`;
-          li.appendChild(title);
+        data.variants.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "variant-item";
 
           if (item.variant_url) {
-            const a = document.createElement("a");
-            a.href = item.variant_url;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            a.textContent = item.variant_url;
-            li.appendChild(a);
+            div.innerHTML = `
+              <div><strong>Attribute:</strong> ${escapeHtml(item.attribute)}</div>
+              <div><a href="${escapeAttr(item.variant_url)}" target="_blank">${escapeHtml(item.variant_url)}</a></div>
+            `;
           } else {
-            const span = document.createElement("span");
-            span.className = "error";
-            span.textContent = "Link bulunamadı";
-            li.appendChild(span);
+            div.innerHTML = `
+              <div><strong>Attribute:</strong> ${escapeHtml(item.attribute)}</div>
+              <div class="muted">Link bulunamadı</div>
+            `;
           }
 
-          listEl.appendChild(li);
-        }
+          variantsContent.appendChild(div);
+        });
 
-        loaded = true;
+        variantsLoaded = true;
       } catch (err) {
-        statusEl.innerHTML = `<span class="error">İstek hatası: ${err.message}</span>`;
-      } finally {
-        loading = false;
+        variantsContent.innerHTML = `<div class="error">Varyantlar alınamadı: ${escapeHtml(err.message)}</div>`;
       }
-    });
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function escapeAttr(str) {
+      return String(str || "").replace(/"/g, "&quot;");
+    }
   </script>
 </body>
 </html>
