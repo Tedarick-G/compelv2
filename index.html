@@ -1,263 +1,193 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Compel Liste</title>
-<style>
-body{font:13px Arial,sans-serif;margin:16px;color:#111}
-a{color:#06c;text-decoration:none}
-a:hover{text-decoration:underline}
-.row{margin:8px 0}
-.btn{border:1px solid #999;background:#f7f7f7;padding:5px 9px;cursor:pointer}
-select{min-width:320px;min-height:240px}
-.brand{border:1px solid #ddd;padding:8px;margin:10px 0}
-.brandhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.box{margin-top:8px;padding-left:8px}
-.hidden{display:none}
-.loading{color:#666}
-.err{color:#b00}
-table{border-collapse:collapse;width:100%;margin:8px 0}
-th,td{border:1px solid #ddd;padding:6px;vertical-align:top;text-align:left}
-th{background:#f5f5f5}
-img.p{width:50px;height:50px;object-fit:contain;background:#fff;display:block}
-.vwrap{margin:6px 0 12px 22px}
-.small{font-size:12px;color:#666}
-.pitem{margin:6px 0}
-.linkcell a{word-break:break-all}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Varyant Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    .product-card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .product-link {
+      display: inline-block;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+
+    .variant-toggle {
+      display: inline-block;
+      cursor: pointer;
+      user-select: none;
+      font-weight: bold;
+      color: #0b57d0;
+      margin: 10px 0;
+    }
+
+    .variant-box {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid #e2e2e2;
+      border-radius: 8px;
+      background: #fafafa;
+      display: none;
+    }
+
+    .variant-box.open {
+      display: block;
+    }
+
+    .variant-status {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .variant-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .variant-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .variant-list li:last-child {
+      border-bottom: none;
+    }
+
+    .variant-list a {
+      word-break: break-all;
+    }
+
+    .error {
+      color: #b00020;
+    }
+  </style>
 </head>
 <body>
+  <div class="product-card">
+    <h2>Ürün</h2>
 
-<div class="row"><b>Marka Seç</b></div>
-<div class="row">
-  <select id="brands" multiple></select>
-</div>
-<div class="row">
-  <button class="btn" id="listBtn">Listele</button>
-  <span class="small">Ctrl/Cmd ile çoklu seçim</span>
-</div>
+    <a
+      class="product-link"
+      id="productLink"
+      href="https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html"
+      target="_blank"
+    >
+      https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html
+    </a>
 
-<div id="out"></div>
-
-<script>
-const API="https://13.tvkapora.workers.dev";
-
-const BRANDS=[
-  {name:"Ableton",url:"https://compel.com.tr/brand/1-ableton"},
-  {name:"Allen & Heath",url:"https://compel.com.tr/brand/48-allen-heath"},
-  {name:"Arturia",url:"https://compel.com.tr/brand/4-arturia"},
-  {name:"Avalon",url:"https://compel.com.tr/brand/6-avalon"},
-  {name:"Avid",url:"https://compel.com.tr/brand/7-avid"},
-  {name:"Compel",url:"https://compel.com.tr/brand/49-compel"},
-  {name:"Cranborne Audio",url:"https://compel.com.tr/brand/41-cranborne-audio"},
-  {name:"Crane Song",url:"https://compel.com.tr/brand/9-crane-song"},
-  {name:"Denon DJ",url:"https://compel.com.tr/brand/10-denon-dj"},
-  {name:"Fender Studio",url:"https://compel.com.tr/brand/50-fender-studio"},
-  {name:"Genelec",url:"https://compel.com.tr/brand/11-genelec"},
-  {name:"Headrush",url:"https://compel.com.tr/brand/12-headrush"},
-  {name:"Hosa",url:"https://compel.com.tr/brand/13-hosa"},
-  {name:"M-Audio",url:"https://compel.com.tr/brand/16-m-audio"},
-  {name:"M-GAME",url:"https://compel.com.tr/brand/44-m-game"},
-  {name:"Marantz Professional",url:"https://compel.com.tr/brand/17-marantz-professional"},
-  {name:"Numark",url:"https://compel.com.tr/brand/20-numark"},
-  {name:"PreSonus",url:"https://compel.com.tr/brand/21-presonus"},
-  {name:"Rane",url:"https://compel.com.tr/brand/23-rane"},
-  {name:"Rode",url:"https://compel.com.tr/brand/24-rode"},
-  {name:"Rode X",url:"https://compel.com.tr/brand/45-rode-x"},
-  {name:"Rupert Neve Designs",url:"https://compel.com.tr/brand/25-rupert-neve-designs"},
-  {name:"Sheeran Loopers",url:"https://compel.com.tr/brand/47-sheeran-loopers"},
-  {name:"Sibelius",url:"https://compel.com.tr/brand/26-sibelius"},
-  {name:"Sonarworks",url:"https://compel.com.tr/brand/28-sonarworks"},
-  {name:"SoundSwitch",url:"https://compel.com.tr/brand/43-soundswitch"},
-  {name:"Stanton",url:"https://compel.com.tr/brand/42-stanton"},
-  {name:"Universal Audio",url:"https://compel.com.tr/brand/36-universal-audio"},
-  {name:"Warm Audio",url:"https://compel.com.tr/brand/38-warm-audio"}
-];
-
-const sel=document.getElementById("brands");
-const out=document.getElementById("out");
-
-BRANDS.forEach((b,i)=>{
-  const o=document.createElement("option");
-  o.value=i;
-  o.textContent=b.name;
-  sel.appendChild(o);
-});
-
-document.getElementById("listBtn").onclick=()=>{
-  out.innerHTML="";
-  const ids=[...sel.selectedOptions].map(x=>+x.value);
-  ids.forEach(i=>renderBrand(BRANDS[i]));
-};
-
-async function J(u){
-  const r=await fetch(u);
-  return r.json();
-}
-
-function esc(s){
-  return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
-}
-
-function rowHtml(x,i){
-  return `<tr>
-    <td>${i||""}</td>
-    <td>${x.image?`<img class="p" src="${esc(x.image)}">`:""}</td>
-    <td>${esc(x.brand||"")}</td>
-    <td>${esc(x.code||"")}</td>
-    <td>${esc(x.name||"")}</td>
-    <td>${esc(x.stock||"")}</td>
-    <td>${esc(x.usd||"")}</td>
-    <td>${esc(x.eur||"")}</td>
-    <td>${esc(x.try||"")}</td>
-    <td>${esc(x.ean||"")}</td>
-    <td class="linkcell">${x.url?`<a href="${esc(x.url)}" target="_blank">${esc(x.url)}</a>`:""}</td>
-  </tr>`;
-}
-
-function tableHtml(list){
-  return `<table>
-    <thead>
-      <tr>
-        <th>Sıra</th>
-        <th>Resim</th>
-        <th>Marka</th>
-        <th>Ürün Kodu</th>
-        <th>Ürün Adı</th>
-        <th>Stok</th>
-        <th>USD</th>
-        <th>EUR</th>
-        <th>TRY</th>
-        <th>EAN</th>
-        <th>Link</th>
-      </tr>
-    </thead>
-    <tbody>${list.map((x,i)=>rowHtml(x,i+1)).join("")}</tbody>
-  </table>`;
-}
-
-function renderBrand(b){
-  const d=document.createElement("div");
-  d.className="brand";
-  d.innerHTML=`
-    <div class="brandhead">
-      <b>${esc(b.name)}</b>
-      <a href="${esc(b.url)}" target="_blank">${esc(b.url)}</a>
-      <button class="btn">Ürünleri Aç</button>
+    <div
+      class="variant-toggle"
+      id="variantToggle"
+      data-product-url="https://compel.com.tr/ana-sayfa/1949-rode-interview-micro.html"
+    >
+      ▼ Varyantlar
     </div>
-    <div class="box hidden"></div>
-  `;
-  const btn=d.querySelector("button");
-  const box=d.querySelector(".box");
-  btn.onclick=()=>toggleProducts(b,box,btn);
-  out.appendChild(d);
-}
 
-async function toggleProducts(b,box,btn){
-  if(!box.classList.contains("hidden")){
-    box.classList.add("hidden");
-    btn.textContent="Ürünleri Aç";
-    return;
-  }
+    <div class="variant-box" id="variantBox">
+      <div class="variant-status" id="variantStatus">Hazır</div>
+      <ul class="variant-list" id="variantList"></ul>
+    </div>
+  </div>
 
-  box.classList.remove("hidden");
-  btn.textContent="Kapat";
-  if(box.dataset.loaded)return;
+  <script>
+    const WORKER_URL = "https://compeltest.tvkapora.workers.dev/";
 
-  box.innerHTML='<div class="loading">ürün linkleri geliyor...</div>';
+    const toggle = document.getElementById("variantToggle");
+    const box = document.getElementById("variantBox");
+    const statusEl = document.getElementById("variantStatus");
+    const listEl = document.getElementById("variantList");
 
-  try{
-    const pages=await J(API+"?brandpages="+encodeURIComponent(b.url));
-    const urls=[];
-    const seen={};
+    let loaded = false;
+    let loading = false;
 
-    for(const p of pages){
-      const arr=await J(API+"?products="+encodeURIComponent(p));
-      arr.forEach(u=>{
-        if(!seen[u]){
-          seen[u]=1;
-          urls.push(u);
+    toggle.addEventListener("click", async function () {
+      box.classList.toggle("open");
+
+      if (!box.classList.contains("open")) {
+        toggle.textContent = "▼ Varyantlar";
+        return;
+      }
+
+      toggle.textContent = "▲ Varyantlar";
+
+      if (loaded || loading) return;
+
+      loading = true;
+      statusEl.textContent = "Varyantlar yükleniyor...";
+      listEl.innerHTML = "";
+
+      try {
+        const productUrl = toggle.dataset.productUrl;
+        const endpoint = `${WORKER_URL}?variants=${encodeURIComponent(productUrl)}`;
+
+        const resp = await fetch(endpoint);
+        const data = await resp.json();
+
+        if (!data.ok) {
+          statusEl.innerHTML = `<span class="error">Hata: ${data.error || "Bilinmeyen hata"}</span>`;
+          loading = false;
+          return;
         }
-      });
-    }
 
-    box.innerHTML="";
-    urls.forEach((u,i)=>{
-      const r=document.createElement("div");
-      r.className="pitem";
-      r.innerHTML=`
-        <span>${i+1}.</span>
-        <a href="#" class="plink">${esc(u)}</a>
-        <div class="pdata hidden"></div>
-      `;
-      const plink=r.querySelector(".plink");
-      const pdata=r.querySelector(".pdata");
-      plink.onclick=e=>{
-        e.preventDefault();
-        toggleDetail(u,pdata,b.name);
-      };
-      box.appendChild(r);
+        const variants = Array.isArray(data.variants) ? data.variants : [];
+
+        if (!variants.length) {
+          statusEl.textContent = "Varyant bulunamadı.";
+          loaded = true;
+          loading = false;
+          return;
+        }
+
+        statusEl.textContent = `${variants.length} varyant bulundu`;
+
+        for (const item of variants) {
+          const li = document.createElement("li");
+
+          const title = document.createElement("div");
+          title.textContent = `${item.color || "Bilinmeyen"} (attribute: ${item.attribute})`;
+          li.appendChild(title);
+
+          if (item.variant_url) {
+            const a = document.createElement("a");
+            a.href = item.variant_url;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = item.variant_url;
+            li.appendChild(a);
+          } else {
+            const span = document.createElement("span");
+            span.className = "error";
+            span.textContent = "Link bulunamadı";
+            li.appendChild(span);
+          }
+
+          listEl.appendChild(li);
+        }
+
+        loaded = true;
+      } catch (err) {
+        statusEl.innerHTML = `<span class="error">İstek hatası: ${err.message}</span>`;
+      } finally {
+        loading = false;
+      }
     });
-
-    box.dataset.loaded="1";
-  }catch(e){
-    box.innerHTML='<div class="err">ürünler alınamadı</div>';
-  }
-}
-
-async function toggleDetail(url,el,brand){
-  if(!el.classList.contains("hidden")){
-    el.classList.add("hidden");
-    return;
-  }
-
-  el.classList.remove("hidden");
-  if(el.dataset.loaded)return;
-
-  el.innerHTML='<div class="loading">yükleniyor...</div>';
-
-  try{
-    const x=await J(API+"?detail="+encodeURIComponent(url)+"&brand="+encodeURIComponent(brand));
-
-    const main=[{
-      image:x.image||"",
-      brand:x.brand||brand||"",
-      code:x.code||"",
-      name:x.name||"",
-      stock:x.stock||"",
-      usd:x.usd||"",
-      eur:x.eur||"",
-      try:x.try||"",
-      ean:x.ean||"",
-      url:x.url||url
-    }];
-
-    let h=tableHtml(main);
-
-    if(x.variants&&x.variants.length){
-      h+=`
-        <div class="vwrap">
-          <a href="#" class="vbtn">Varyantlar (${x.variants.length})</a>
-          <div class="vbox hidden">${tableHtml(x.variants)}</div>
-        </div>
-      `;
-    }
-
-    el.innerHTML=h;
-    el.dataset.loaded="1";
-
-    const vb=el.querySelector(".vbtn");
-    if(vb){
-      vb.onclick=e=>{
-        e.preventDefault();
-        el.querySelector(".vbox").classList.toggle("hidden");
-      };
-    }
-  }catch(e){
-    el.innerHTML='<div class="err">ürün bilgisi alınamadı</div>';
-  }
-}
-</script>
+  </script>
 </body>
 </html>
