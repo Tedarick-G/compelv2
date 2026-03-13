@@ -1,179 +1,286 @@
 <!doctype html>
-<meta charset="utf-8">
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Compel Marka / Ürün / Varyant Liste</title>
+  <style>
+    body{font:13px/1.4 Arial,sans-serif;background:#111;color:#eee;margin:0;padding:16px}
+    a{color:#8ec5ff;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1600px;margin:0 auto}
+    h1{font-size:20px;margin:0 0 16px}
+    .bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+    input{background:#1a1a1a;color:#fff;border:1px solid #333;padding:8px 10px;width:280px}
+    button{background:#222;color:#fff;border:1px solid #444;padding:8px 10px;cursor:pointer}
+    button:hover{background:#2b2b2b}
+    .muted{color:#999}
+    .brand{border:1px solid #2a2a2a;margin:0 0 8px;background:#171717}
+    .brandHead{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px}
+    .brandLeft{display:flex;gap:8px;align-items:center;min-width:0}
+    .brandName{font-weight:700}
+    .brandBody{display:none;padding:10px;border-top:1px solid #262626}
+    .show{display:block}
+    .status{margin:8px 0;color:#9ad}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    th,td{border:1px solid #2c2c2c;padding:6px;vertical-align:top;word-break:break-word}
+    th{background:#1e1e1e}
+    .imgCell{width:60px}
+    .imgCell img{width:50px;height:50px;object-fit:contain;background:#fff;border:1px solid #333}
+    .num{width:52px;text-align:center}
+    .stock{width:90px}
+    .price{width:90px}
+    .ean{width:150px}
+    .linkc{width:170px}
+    .code{width:100px}
+    .brandc{width:110px}
+    .namec{width:auto}
+    .sub{margin-top:6px}
+    .sub table{background:#131313}
+    .small{font-size:12px}
+    .loading{color:#f6c56b}
+    .ok{color:#8fd18f}
+    .err{color:#ff8d8d}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Compel Marka / Ürün / Varyant Liste</h1>
 
-<div style="position:relative;display:inline-block">
-<button onclick="x.hidden=!x.hidden">Marka Seç</button>
+  <div class="bar">
+    <input id="q" placeholder="Marka ara">
+    <button id="reload">Markaları Yükle</button>
+    <span id="topStatus" class="muted"></span>
+  </div>
 
-<div id="x" hidden style="position:absolute;background:#fff;border:1px solid #999;max-height:240px;overflow:auto">
-
-<label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode|246"> Rode</label><br>
-<label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa|296"> Hosa</label><br>
-
+  <div id="brands"></div>
 </div>
-</div>
-
-<button onclick="f()">Listele</button>
-
-<pre id="o"></pre>
 
 <script>
+const WORKER = "https://13.tvkapora.workers.dev";
+const brandsEl = document.getElementById("brands");
+const qEl = document.getElementById("q");
+const topStatus = document.getElementById("topStatus");
 
-let W="https://13.tvkapora.workers.dev"
+document.getElementById("reload").onclick = loadBrands;
+qEl.oninput = filterBrands;
 
-onmousedown=e=>x.hidden||x.contains(e.target)||e.target==x.previousElementSibling||(x.hidden=1)
+loadBrands();
 
-async function f(){
-
-let a=[...document.querySelectorAll('#x input:checked')].map(x=>{
-let [name,url,count]=x.value.split('|')
-return {name,url,count:+count}
-})
-
-let r=await fetch(W,{
-method:'POST',
-headers:{'content-type':'application/json'},
-body:JSON.stringify(a)
-})
-
-let j=await r.json(),t=''
-
-j.forEach(x=>{
-
-t+=x.name+' : '+x.old+' / '+x.now+'\n'
-
-for(let i=1;i<=Math.ceil(x.now/20);i++){
-
-let u=i<2?x.url:x.url+'?page='+i
-
-t+=u+'\n'
-t+='▼ Ürünler: '+u+'\n'
-
+async function j(url){
+  const r = await fetch(url);
+  return await r.json();
 }
 
-t+='\n'
+async function loadBrands(){
+  topStatus.textContent = "Markalar yükleniyor...";
+  brandsEl.innerHTML = "";
+  let data;
+  try{
+    data = await j(WORKER + "?brands=1");
+  }catch(e){
+    topStatus.textContent = "Markalar alınamadı";
+    return;
+  }
+  if(!data || !data.brands){
+    topStatus.textContent = "Marka verisi yok";
+    return;
+  }
 
-})
-
-o.textContent=t
-
-;[...o.textContent.matchAll(/▼ Ürünler: (.+)/g)].forEach(m=>{
-
-o.innerHTML=o.innerHTML.replace(
-'▼ Ürünler: '+m[1],
-'<span onclick="g(this,\''+m[1]+'\')" style="cursor:pointer;color:blue">▼ Ürünler</span><div></div>'
-)
-
-})
-
+  topStatus.textContent = data.brands.length + " marka";
+  brandsEl.innerHTML = data.brands.map((b,i)=>`
+    <div class="brand" data-name="${esc(b.name.toLowerCase())}">
+      <div class="brandHead">
+        <div class="brandLeft">
+          <span class="num">${i+1}</span>
+          <a href="${b.url}" target="_blank" class="brandName">${esc(b.name)}</a>
+          <span class="muted small">${esc(b.url)}</span>
+        </div>
+        <div>
+          <button onclick="toggleBrand(this,'${escAttr(b.url)}')">Ürünleri Göster</button>
+        </div>
+      </div>
+      <div class="brandBody"></div>
+    </div>
+  `).join("");
 }
 
-async function g(el,u){
-
-let box=el.nextElementSibling
-
-if(el.dataset.open){
-
-box.innerHTML=''
-el.dataset.open=''
-el.textContent='▼ Ürünler'
-
-return
-
+function filterBrands(){
+  const q = qEl.value.trim().toLowerCase();
+  [...document.querySelectorAll(".brand")].forEach(x=>{
+    x.style.display = x.dataset.name.includes(q) ? "" : "none";
+  });
 }
 
-el.textContent="Yükleniyor..."
+async function toggleBrand(btn,url){
+  const box = btn.closest(".brand").querySelector(".brandBody");
 
-let r=await fetch(W+"?products="+encodeURIComponent(u))
+  if(box.classList.contains("show")){
+    box.classList.remove("show");
+    btn.textContent = "Ürünleri Göster";
+    return;
+  }
 
-let j=await r.json()
+  box.classList.add("show");
+  btn.textContent = "Ürünleri Gizle";
 
-box.innerHTML=j.map(v=>`
-<div>
-<a href="${v}" target="_blank">${v}</a>
-<span onclick="info(this,'${v}')" style="cursor:pointer;color:red"> ▶ Bilgi</span>
-${v.includes('#')?'<span onclick="varlist(this,\''+v+'\')" style="cursor:pointer;color:green"> ▶ Varyantlar</span>':''}
-<div></div>
-</div>
-`).join("<br>")
+  if(box.dataset.loaded === "1") return;
 
-el.dataset.open=1
-el.textContent="▲ Ürünleri Gizle"
+  box.innerHTML = `<div class="status loading">Ürün linkleri yükleniyor...</div>`;
+  let data;
+  try{
+    data = await j(WORKER + "?products=" + encodeURIComponent(url));
+  }catch(e){
+    box.innerHTML = `<div class="status err">Ürünler alınamadı</div>`;
+    return;
+  }
 
+  const list = (data && data.products) ? data.products : [];
+  if(!list.length){
+    box.innerHTML = `<div class="status err">Ürün bulunamadı</div>`;
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="status ok">${list.length} ürün bulundu</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="num">Sıra</th>
+          <th class="imgCell">Resim</th>
+          <th class="brandc">Marka</th>
+          <th class="code">Ürün Kodu</th>
+          <th class="namec">Ürün Adı</th>
+          <th class="stock">Stok</th>
+          <th class="price">USD</th>
+          <th class="price">EUR</th>
+          <th class="price">TRY</th>
+          <th class="ean">EAN</th>
+          <th class="linkc">Link</th>
+        </tr>
+      </thead>
+      <tbody id="tb_${id(url)}">
+        ${list.map((u,i)=>`
+          <tr id="row_${id(url)}_${i}">
+            <td class="num">${i+1}</td>
+            <td class="imgCell">-</td>
+            <td>...</td>
+            <td>...</td>
+            <td>Yükleniyor...</td>
+            <td>...</td>
+            <td>...</td>
+            <td>...</td>
+            <td>...</td>
+            <td>...</td>
+            <td><a href="${u}" target="_blank">Aç</a></td>
+          </tr>
+          <tr id="sub_${id(url)}_${i}" style="display:none">
+            <td colspan="11"></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+
+  box.dataset.loaded = "1";
+  loadRows(url,list);
 }
 
-async function info(el,link){
-
-let box=el.nextElementSibling
-
-if(el.dataset.open){
-
-box.innerHTML=''
-el.dataset.open=''
-el.textContent=' ▶ Bilgi'
-return
-
+async function loadRows(key,list){
+  for(let i=0;i<list.length;i++){
+    const row = document.getElementById(`row_${id(key)}_${i}`);
+    try{
+      const d = await j(WORKER + "?detail=" + encodeURIComponent(list[i]));
+      fillRow(row, d, key, i);
+    }catch(e){
+      row.cells[4].textContent = "Hata";
+    }
+  }
 }
 
-el.textContent="Yükleniyor..."
+function fillRow(row,d,key,i){
+  const img = d.image ? `<img src="${d.image}" alt="">` : "-";
+  const variantBtn = d.has_variants
+    ? `<div class="sub"><button onclick="toggleVariants('${id(key)}_${i}')">Varyantlar (${d.variants.length})</button></div>`
+    : "";
 
-let r=await fetch(W+"?product="+encodeURIComponent(link))
+  row.innerHTML = `
+    <td class="num">${row.cells[0].textContent}</td>
+    <td class="imgCell">${img}</td>
+    <td>${esc(d.brand || "")}</td>
+    <td>${esc(d.sku || "")}</td>
+    <td>${esc(d.name || "")}${variantBtn}</td>
+    <td>${esc(d.stock || "")}</td>
+    <td>${esc(d.usd || "")}</td>
+    <td>${esc(d.eur || "")}</td>
+    <td>${esc(d.tr || "")}</td>
+    <td>${esc(d.ean || "")}</td>
+    <td><a href="${d.link}" target="_blank">Ürün</a></td>
+  `;
 
-let j=await r.json()
-
-box.innerHTML=`
-<table border=1 cellpadding=5>
-<tr>
-<th>Resim</th>
-<th>Kod</th>
-<th>Ad</th>
-<th>Stok</th>
-<th>USD</th>
-<th>EUR</th>
-<th>TRY</th>
-<th>EAN</th>
-</tr>
-<tr>
-<td><img src="${j.img}" width=50></td>
-<td>${j.code||""}</td>
-<td>${j.name||""}</td>
-<td>${j.stock||""}</td>
-<td>${j.usd||""}</td>
-<td>${j.eur||""}</td>
-<td>${j.try||""}</td>
-<td>${j.ean||""}</td>
-</tr>
-</table>
-`
-
-el.dataset.open=1
-el.textContent=" ▼ Gizle"
-
+  if(d.has_variants){
+    const sub = document.getElementById(`sub_${id(key)}_${i}`);
+    sub.firstElementChild.innerHTML = `
+      <div class="sub">
+        <table>
+          <thead>
+            <tr>
+              <th class="num">#</th>
+              <th class="imgCell">Resim</th>
+              <th class="brandc">Marka</th>
+              <th class="code">Ürün Kodu</th>
+              <th class="namec">Ürün Adı</th>
+              <th class="stock">Stok</th>
+              <th class="price">USD</th>
+              <th class="price">EUR</th>
+              <th class="price">TRY</th>
+              <th class="ean">EAN</th>
+              <th class="linkc">Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${d.variants.map((v,ix)=>`
+              <tr>
+                <td class="num">${ix+1}</td>
+                <td class="imgCell">${v.image ? `<img src="${v.image}" alt="">` : "-"}</td>
+                <td>${esc(d.brand || "")}</td>
+                <td>${esc(v.sku || d.sku || "")}</td>
+                <td>${esc((d.name || "") + " - " + (v.color || ""))}</td>
+                <td>${esc(v.stock || "")}</td>
+                <td>${esc(v.usd || "")}</td>
+                <td>${esc(v.eur || "")}</td>
+                <td>${esc(v.tr || "")}</td>
+                <td>${esc(v.ean || "")}</td>
+                <td>${v.url ? `<a href="${v.url}" target="_blank">Varyant</a>` : "-"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
 }
 
-async function varlist(el,link){
-
-let box=el.nextElementSibling
-
-if(el.dataset.open){
-
-box.innerHTML=''
-el.dataset.open=''
-el.textContent=" ▶ Varyantlar"
-return
-
+function toggleVariants(k){
+  const tr = document.getElementById("sub_" + k);
+  tr.style.display = tr.style.display === "none" ? "" : "none";
 }
 
-el.textContent="Yükleniyor..."
-
-let r=await fetch(W+"?variants="+encodeURIComponent(link))
-
-let j=await r.json()
-
-box.innerHTML=j.map(v=>`<div><a href="${v}" target="_blank">${v}</a></div>`).join("")
-
-el.dataset.open=1
-el.textContent=" ▼ Varyantları Gizle"
-
+function esc(s){
+  return String(s || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
 }
 
+function escAttr(s){
+  return esc(s).replace(/'/g,"&#39;");
+}
+
+function id(s){
+  return btoa(unescape(encodeURIComponent(s))).replace(/[^a-zA-Z0-9]/g,"");
+}
 </script>
+</body>
+</html>
