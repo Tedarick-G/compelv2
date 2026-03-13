@@ -24,6 +24,7 @@ img.p{width:50px;height:50px;object-fit:contain;background:#fff;display:block}
 .vwrap{margin:6px 0 12px 22px}
 .small{font-size:12px;color:#666}
 .linkcell a{word-break:break-all}
+.pitem{margin:6px 0}
 </style>
 </head>
 <body>
@@ -77,7 +78,7 @@ const sel=document.getElementById("brands");
 const out=document.getElementById("out");
 
 BRANDS.forEach((b,i)=>{
-  let o=document.createElement("option");
+  const o=document.createElement("option");
   o.value=i;
   o.textContent=b.name;
   sel.appendChild(o);
@@ -85,12 +86,12 @@ BRANDS.forEach((b,i)=>{
 
 document.getElementById("listBtn").onclick=()=>{
   out.innerHTML="";
-  let ids=[...sel.selectedOptions].map(x=>+x.value);
+  const ids=[...sel.selectedOptions].map(x=>+x.value);
   ids.forEach(i=>renderBrand(BRANDS[i]));
 };
 
-async function j(u,o){
-  let r=await fetch(u,o||{});
+async function J(u,o){
+  const r=await fetch(u,o||{});
   return r.json();
 }
 
@@ -136,7 +137,7 @@ function tableHtml(list){
 }
 
 function renderBrand(b){
-  let d=document.createElement("div");
+  const d=document.createElement("div");
   d.className="brand";
   d.innerHTML=`
     <div class="brandhead">
@@ -146,8 +147,8 @@ function renderBrand(b){
     </div>
     <div class="box hidden"></div>
   `;
-  let btn=d.querySelector("button");
-  let box=d.querySelector(".box");
+  const btn=d.querySelector("button");
+  const box=d.querySelector(".box");
   btn.onclick=()=>toggleProducts(b,box,btn);
   out.appendChild(d);
 }
@@ -158,17 +159,20 @@ async function toggleProducts(b,box,btn){
     btn.textContent="Ürünleri Aç";
     return;
   }
+
   box.classList.remove("hidden");
   btn.textContent="Kapat";
   if(box.dataset.loaded)return;
 
   box.innerHTML='<div class="loading">ürün linkleri geliyor...</div>';
-  try{
-    let pages=await j(API+"?brandpages="+encodeURIComponent(b.url));
-    let urls=[],seen={};
 
-    for(let p of pages){
-      let arr=await j(API+"?products="+encodeURIComponent(p));
+  try{
+    const pages=await J(API+"?brandpages="+encodeURIComponent(b.url));
+    const urls=[];
+    const seen={};
+
+    for(const p of pages){
+      const arr=await J(API+"?products="+encodeURIComponent(p));
       arr.forEach(u=>{
         if(!seen[u]){
           seen[u]=1;
@@ -179,15 +183,15 @@ async function toggleProducts(b,box,btn){
 
     box.innerHTML="";
     urls.forEach((u,i)=>{
-      let r=document.createElement("div");
-      r.className="row";
+      const r=document.createElement("div");
+      r.className="pitem";
       r.innerHTML=`
         <span>${i+1}.</span>
         <a href="#" class="plink">${esc(u)}</a>
         <div class="pdata hidden"></div>
       `;
-      let plink=r.querySelector(".plink");
-      let pdata=r.querySelector(".pdata");
+      const plink=r.querySelector(".plink");
+      const pdata=r.querySelector(".pdata");
       plink.onclick=e=>{
         e.preventDefault();
         toggleDetail(u,pdata,b.name);
@@ -206,14 +210,16 @@ async function toggleDetail(url,el,brand){
     el.classList.add("hidden");
     return;
   }
+
   el.classList.remove("hidden");
   if(el.dataset.loaded)return;
 
   el.innerHTML='<div class="loading">yükleniyor...</div>';
-  try{
-    let x=await j(API+"?detail="+encodeURIComponent(url)+"&brand="+encodeURIComponent(brand));
 
-    let main=[{
+  try{
+    const x=await J(API+"?detail="+encodeURIComponent(url)+"&brand="+encodeURIComponent(brand));
+
+    const main=[{
       image:x.image||"",
       brand:x.brand||brand||"",
       code:x.code||"",
@@ -229,16 +235,18 @@ async function toggleDetail(url,el,brand){
     let h=tableHtml(main);
 
     if(x.variants&&x.variants.length){
-      h+=`<div class="vwrap">
-        <a href="#" class="vbtn">Varyantlar (${x.variants.length})</a>
-        <div class="vbox hidden">${tableHtml(x.variants)}</div>
-      </div>`;
+      h+=`
+        <div class="vwrap">
+          <a href="#" class="vbtn">Varyantlar (${x.variants.length})</a>
+          <div class="vbox hidden">${tableHtml(x.variants)}</div>
+        </div>
+      `;
     }
 
     el.innerHTML=h;
     el.dataset.loaded="1";
 
-    let vb=el.querySelector(".vbtn");
+    const vb=el.querySelector(".vbtn");
     if(vb){
       vb.onclick=e=>{
         e.preventDefault();
