@@ -48,14 +48,12 @@ async function f(){
     headers:{'content-type':'application/json'},
     body:JSON.stringify(a)
   })
-  let j=await r.json(),t='',top=0,now=0
+  let j=await r.json(),t=''
   j.forEach(x=>{
-    top+=x.old
-    now+=x.now
-    t+=x.name+' : '+x.old+' / '+x.now+' '+(x.diff>0?'[ '+x.diff+' Yeni Ürün ]':x.diff<0?'[ '+(-x.diff)+' Eksik ]':'[ Değişmedi ]')+'\n'
-    for(let i=1;i<=Math.ceil(x.now/20||x.old/20);i++)t+=(i<2?x.url:x.url+'?page='+i)+'\n'
+    t+=x.name+' : '+x.old+' / '+x.now+(x.diff>0?' [ '+x.diff+' Yeni Ürün ]':x.diff<0?' [ '+(-x.diff)+' Eksik Ürün ]':'')+'\n'
+    for(let i=1;i<=Math.ceil((x.now||x.old)/20);i++)t+=(i<2?x.url:x.url+'?page='+i)+'\n'
     t+='\n'
   })
-  o.textContent=t+'Toplam kayıtlı ürün: '+top+'\nToplam güncel ürün: '+now
+  o.textContent=t
 }
 </script>
