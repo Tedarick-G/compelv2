@@ -1,285 +1,214 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Compel Marka / Ürün / Varyant Liste</title>
-  <style>
-    body{font:13px/1.4 Arial,sans-serif;background:#111;color:#eee;margin:0;padding:16px}
-    a{color:#8ec5ff;text-decoration:none}
-    a:hover{text-decoration:underline}
-    .wrap{max-width:1600px;margin:0 auto}
-    h1{font-size:20px;margin:0 0 16px}
-    .bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
-    input{background:#1a1a1a;color:#fff;border:1px solid #333;padding:8px 10px;width:280px}
-    button{background:#222;color:#fff;border:1px solid #444;padding:8px 10px;cursor:pointer}
-    button:hover{background:#2b2b2b}
-    .muted{color:#999}
-    .brand{border:1px solid #2a2a2a;margin:0 0 8px;background:#171717}
-    .brandHead{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px}
-    .brandLeft{display:flex;gap:8px;align-items:center;min-width:0}
-    .brandName{font-weight:700}
-    .brandBody{display:none;padding:10px;border-top:1px solid #262626}
-    .show{display:block}
-    .status{margin:8px 0;color:#9ad}
-    table{width:100%;border-collapse:collapse;table-layout:fixed}
-    th,td{border:1px solid #2c2c2c;padding:6px;vertical-align:top;word-break:break-word}
-    th{background:#1e1e1e}
-    .imgCell{width:60px}
-    .imgCell img{width:50px;height:50px;object-fit:contain;background:#fff;border:1px solid #333}
-    .num{width:52px;text-align:center}
-    .stock{width:90px}
-    .price{width:90px}
-    .ean{width:150px}
-    .linkc{width:170px}
-    .code{width:100px}
-    .brandc{width:110px}
-    .namec{width:auto}
-    .sub{margin-top:6px}
-    .sub table{background:#131313}
-    .small{font-size:12px}
-    .loading{color:#f6c56b}
-    .ok{color:#8fd18f}
-    .err{color:#ff8d8d}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compel Marka / Ürün / Varyant</title>
+<style>
+body{font:13px/1.4 Arial,sans-serif;background:#fff;color:#111;margin:16px}
+a{color:#06c;text-decoration:none}
+a:hover{text-decoration:underline}
+.row{margin:6px 0}
+.brand{padding:8px 10px;border:1px solid #ddd;margin:8px 0}
+.brandhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid #999;background:#f7f7f7;padding:4px 8px;cursor:pointer}
+.box{margin-top:8px;padding-left:8px}
+.small{font-size:12px;color:#666}
+.err{color:#b00}
+.ok{color:#080}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+th,td{border:1px solid #ddd;padding:6px;vertical-align:top;text-align:left}
+th{background:#f5f5f5}
+img.p{width:50px;height:50px;object-fit:contain;background:#fff;display:block}
+.linkcell a{word-break:break-all}
+.toggle{cursor:pointer;color:#06c}
+.hidden{display:none}
+.loading{color:#666}
+.vwrap{margin:6px 0 12px 22px}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <h1>Compel Marka / Ürün / Varyant Liste</h1>
-
-  <div class="bar">
-    <input id="q" placeholder="Marka ara">
-    <button id="reload">Markaları Yükle</button>
-    <span id="topStatus" class="muted"></span>
-  </div>
-
-  <div id="brands"></div>
+<div class="row">
+  <button class="btn" id="loadBrands">Markaları Yükle</button>
+  <span class="small">temel görünüm</span>
 </div>
 
+<div id="brands"></div>
+
 <script>
-const WORKER = "https://13.tvkapora.workers.dev";
-const brandsEl = document.getElementById("brands");
-const qEl = document.getElementById("q");
-const topStatus = document.getElementById("topStatus");
+const API="https://13.tvkapora.workers.dev";
 
-document.getElementById("reload").onclick = loadBrands;
-qEl.oninput = filterBrands;
+const brandsEl=document.getElementById("brands");
+document.getElementById("loadBrands").onclick=loadBrands;
 
-loadBrands();
-
-async function j(url){
-  const r = await fetch(url);
-  return await r.json();
-}
-
-async function loadBrands(){
-  topStatus.textContent = "Markalar yükleniyor...";
-  brandsEl.innerHTML = "";
-  let data;
-  try{
-    data = await j(WORKER + "?brands=1");
-  }catch(e){
-    topStatus.textContent = "Markalar alınamadı";
-    return;
-  }
-  if(!data || !data.brands){
-    topStatus.textContent = "Marka verisi yok";
-    return;
-  }
-
-  topStatus.textContent = data.brands.length + " marka";
-  brandsEl.innerHTML = data.brands.map((b,i)=>`
-    <div class="brand" data-name="${esc(b.name.toLowerCase())}">
-      <div class="brandHead">
-        <div class="brandLeft">
-          <span class="num">${i+1}</span>
-          <a href="${b.url}" target="_blank" class="brandName">${esc(b.name)}</a>
-          <span class="muted small">${esc(b.url)}</span>
-        </div>
-        <div>
-          <button onclick="toggleBrand(this,'${escAttr(b.url)}')">Ürünleri Göster</button>
-        </div>
-      </div>
-      <div class="brandBody"></div>
-    </div>
-  `).join("");
-}
-
-function filterBrands(){
-  const q = qEl.value.trim().toLowerCase();
-  [...document.querySelectorAll(".brand")].forEach(x=>{
-    x.style.display = x.dataset.name.includes(q) ? "" : "none";
-  });
-}
-
-async function toggleBrand(btn,url){
-  const box = btn.closest(".brand").querySelector(".brandBody");
-
-  if(box.classList.contains("show")){
-    box.classList.remove("show");
-    btn.textContent = "Ürünleri Göster";
-    return;
-  }
-
-  box.classList.add("show");
-  btn.textContent = "Ürünleri Gizle";
-
-  if(box.dataset.loaded === "1") return;
-
-  box.innerHTML = `<div class="status loading">Ürün linkleri yükleniyor...</div>`;
-  let data;
-  try{
-    data = await j(WORKER + "?products=" + encodeURIComponent(url));
-  }catch(e){
-    box.innerHTML = `<div class="status err">Ürünler alınamadı</div>`;
-    return;
-  }
-
-  const list = (data && data.products) ? data.products : [];
-  if(!list.length){
-    box.innerHTML = `<div class="status err">Ürün bulunamadı</div>`;
-    return;
-  }
-
-  box.innerHTML = `
-    <div class="status ok">${list.length} ürün bulundu</div>
-    <table>
-      <thead>
-        <tr>
-          <th class="num">Sıra</th>
-          <th class="imgCell">Resim</th>
-          <th class="brandc">Marka</th>
-          <th class="code">Ürün Kodu</th>
-          <th class="namec">Ürün Adı</th>
-          <th class="stock">Stok</th>
-          <th class="price">USD</th>
-          <th class="price">EUR</th>
-          <th class="price">TRY</th>
-          <th class="ean">EAN</th>
-          <th class="linkc">Link</th>
-        </tr>
-      </thead>
-      <tbody id="tb_${id(url)}">
-        ${list.map((u,i)=>`
-          <tr id="row_${id(url)}_${i}">
-            <td class="num">${i+1}</td>
-            <td class="imgCell">-</td>
-            <td>...</td>
-            <td>...</td>
-            <td>Yükleniyor...</td>
-            <td>...</td>
-            <td>...</td>
-            <td>...</td>
-            <td>...</td>
-            <td>...</td>
-            <td><a href="${u}" target="_blank">Aç</a></td>
-          </tr>
-          <tr id="sub_${id(url)}_${i}" style="display:none">
-            <td colspan="11"></td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-
-  box.dataset.loaded = "1";
-  loadRows(url,list);
-}
-
-async function loadRows(key,list){
-  for(let i=0;i<list.length;i++){
-    const row = document.getElementById(`row_${id(key)}_${i}`);
-    try{
-      const d = await j(WORKER + "?detail=" + encodeURIComponent(list[i]));
-      fillRow(row, d, key, i);
-    }catch(e){
-      row.cells[4].textContent = "Hata";
-    }
-  }
-}
-
-function fillRow(row,d,key,i){
-  const img = d.image ? `<img src="${d.image}" alt="">` : "-";
-  const variantBtn = d.has_variants
-    ? `<div class="sub"><button onclick="toggleVariants('${id(key)}_${i}')">Varyantlar (${d.variants.length})</button></div>`
-    : "";
-
-  row.innerHTML = `
-    <td class="num">${row.cells[0].textContent}</td>
-    <td class="imgCell">${img}</td>
-    <td>${esc(d.brand || "")}</td>
-    <td>${esc(d.sku || "")}</td>
-    <td>${esc(d.name || "")}${variantBtn}</td>
-    <td>${esc(d.stock || "")}</td>
-    <td>${esc(d.usd || "")}</td>
-    <td>${esc(d.eur || "")}</td>
-    <td>${esc(d.tr || "")}</td>
-    <td>${esc(d.ean || "")}</td>
-    <td><a href="${d.link}" target="_blank">Ürün</a></td>
-  `;
-
-  if(d.has_variants){
-    const sub = document.getElementById(`sub_${id(key)}_${i}`);
-    sub.firstElementChild.innerHTML = `
-      <div class="sub">
-        <table>
-          <thead>
-            <tr>
-              <th class="num">#</th>
-              <th class="imgCell">Resim</th>
-              <th class="brandc">Marka</th>
-              <th class="code">Ürün Kodu</th>
-              <th class="namec">Ürün Adı</th>
-              <th class="stock">Stok</th>
-              <th class="price">USD</th>
-              <th class="price">EUR</th>
-              <th class="price">TRY</th>
-              <th class="ean">EAN</th>
-              <th class="linkc">Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${d.variants.map((v,ix)=>`
-              <tr>
-                <td class="num">${ix+1}</td>
-                <td class="imgCell">${v.image ? `<img src="${v.image}" alt="">` : "-"}</td>
-                <td>${esc(d.brand || "")}</td>
-                <td>${esc(v.sku || d.sku || "")}</td>
-                <td>${esc((d.name || "") + " - " + (v.color || ""))}</td>
-                <td>${esc(v.stock || "")}</td>
-                <td>${esc(v.usd || "")}</td>
-                <td>${esc(v.eur || "")}</td>
-                <td>${esc(v.tr || "")}</td>
-                <td>${esc(v.ean || "")}</td>
-                <td>${v.url ? `<a href="${v.url}" target="_blank">Varyant</a>` : "-"}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-}
-
-function toggleVariants(k){
-  const tr = document.getElementById("sub_" + k);
-  tr.style.display = tr.style.display === "none" ? "" : "none";
+async function j(u,o){
+  let r=await fetch(u,o||{});
+  return r.json();
 }
 
 function esc(s){
-  return String(s || "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;");
+  return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 }
 
-function escAttr(s){
-  return esc(s).replace(/'/g,"&#39;");
+function td(v){ return "<td>"+(v==null?"":v)+"</td>"; }
+
+function rowHtml(x,i){
+  return `<tr>
+    <td>${i||""}</td>
+    <td>${x.image?`<img class="p" src="${esc(x.image)}">`:""}</td>
+    <td>${esc(x.brand||"")}</td>
+    <td>${esc(x.code||"")}</td>
+    <td>${esc(x.name||"")}</td>
+    <td>${esc(x.stock||"")}</td>
+    <td>${esc(x.usd||"")}</td>
+    <td>${esc(x.eur||"")}</td>
+    <td>${esc(x.try||"")}</td>
+    <td>${esc(x.ean||"")}</td>
+    <td class="linkcell">${x.url?`<a href="${esc(x.url)}" target="_blank">${esc(x.url)}</a>`:""}</td>
+  </tr>`;
 }
 
-function id(s){
-  return btoa(unescape(encodeURIComponent(s))).replace(/[^a-zA-Z0-9]/g,"");
+function tableHtml(list){
+  return `<table>
+    <thead>
+      <tr>
+        <th>Sıra</th>
+        <th>Resim</th>
+        <th>Marka</th>
+        <th>Ürün Kodu</th>
+        <th>Ürün Adı</th>
+        <th>Stok</th>
+        <th>USD</th>
+        <th>EUR</th>
+        <th>TRY</th>
+        <th>EAN</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody>${list.map((x,i)=>rowHtml(x,i+1)).join("")}</tbody>
+  </table>`;
+}
+
+async function loadBrands(){
+  brandsEl.innerHTML='<div class="loading">yükleniyor...</div>';
+  try{
+    let list=await j(API+"?brands=1");
+    brandsEl.innerHTML="";
+    list.forEach(b=>{
+      let d=document.createElement("div");
+      d.className="brand";
+      d.innerHTML=`
+        <div class="brandhead">
+          <b>${esc(b.name)}</b>
+          <span>${esc(b.count||0)} ürün</span>
+          <a href="${esc(b.url)}" target="_blank">${esc(b.url)}</a>
+          <button class="btn">Ürünleri Aç</button>
+        </div>
+        <div class="box hidden"></div>
+      `;
+      let btn=d.querySelector("button");
+      let box=d.querySelector(".box");
+      btn.onclick=()=>toggleProducts(b,box,btn);
+      brandsEl.appendChild(d);
+    });
+  }catch(e){
+    brandsEl.innerHTML='<div class="err">markalar alınamadı</div>';
+  }
+}
+
+async function toggleProducts(b,box,btn){
+  if(!box.classList.contains("hidden")){
+    box.classList.add("hidden");
+    btn.textContent="Ürünleri Aç";
+    return;
+  }
+  btn.textContent="Kapat";
+  box.classList.remove("hidden");
+  if(box.dataset.loaded)return;
+
+  box.innerHTML='<div class="loading">ürün linkleri geliyor...</div>';
+  try{
+    let pages=await j(API+"?brandpages="+encodeURIComponent(b.url));
+    let urls=[],seen={};
+
+    for(let p of pages){
+      let arr=await j(API+"?products="+encodeURIComponent(p));
+      arr.forEach(u=>{
+        if(!seen[u]){
+          seen[u]=1;
+          urls.push(u);
+        }
+      });
+    }
+
+    box.innerHTML="";
+    urls.forEach((u,i)=>{
+      let r=document.createElement("div");
+      r.className="row";
+      r.innerHTML=`
+        <span>${i+1}.</span>
+        <a href="#" class="toggle">${esc(u)}</a>
+        <div class="pdata hidden"></div>
+      `;
+      let t=r.querySelector(".toggle");
+      let pdata=r.querySelector(".pdata");
+      t.onclick=ev=>{
+        ev.preventDefault();
+        toggleProduct(u,pdata,b.name);
+      };
+      box.appendChild(r);
+    });
+
+    box.dataset.loaded="1";
+  }catch(e){
+    box.innerHTML='<div class="err">ürünler alınamadı</div>';
+  }
+}
+
+async function toggleProduct(url,el,brand){
+  if(!el.classList.contains("hidden")){
+    el.classList.add("hidden");
+    return;
+  }
+  el.classList.remove("hidden");
+  if(el.dataset.loaded)return;
+
+  el.innerHTML='<div class="loading">ürün bilgisi geliyor...</div>';
+  try{
+    let x=await j(API+"?detail="+encodeURIComponent(url)+"&brand="+encodeURIComponent(brand));
+    let main=[{
+      image:x.image||"",
+      brand:x.brand||brand||"",
+      code:x.code||"",
+      name:x.name||"",
+      stock:x.stock||"",
+      usd:x.usd||"",
+      eur:x.eur||"",
+      try:x.try||"",
+      ean:x.ean||"",
+      url:x.url||url
+    }];
+
+    let h=tableHtml(main);
+
+    if(x.variants&&x.variants.length){
+      h+=`<div class="vwrap"><div><a href="#" class="vt">Varyantlar (${x.variants.length})</a></div><div class="vbox hidden">${tableHtml(x.variants)}</div></div>`;
+    }
+
+    el.innerHTML=h;
+    el.dataset.loaded="1";
+
+    let vt=el.querySelector(".vt");
+    if(vt){
+      vt.onclick=ev=>{
+        ev.preventDefault();
+        let vb=el.querySelector(".vbox");
+        vb.classList.toggle("hidden");
+      };
+    }
+  }catch(e){
+    el.innerHTML='<div class="err">ürün bilgisi alınamadı</div>';
+  }
 }
 </script>
 </body>
