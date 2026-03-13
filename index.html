@@ -107,7 +107,7 @@
   </div>
 
   <script>
-    const WORKER_URL = "https://compeltest.tvkapora.workers.dev/";
+    const WORKER_URL = "https://13.tvkapora.workers.dev//";
 
     const toggle = document.getElementById("variantToggle");
     const box = document.getElementById("variantBox");
@@ -135,7 +135,7 @@
 
       try {
         const productUrl = toggle.dataset.productUrl;
-        const endpoint = `${WORKER_URL}?variants=${encodeURIComponent(productUrl)}`;
+        const endpoint = `${https://13.tvkapora.workers.dev}?variants=${encodeURIComponent(productUrl)}`;
 
         const resp = await fetch(endpoint);
         const data = await resp.json();
