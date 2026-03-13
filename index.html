@@ -10,7 +10,7 @@ a{color:#06c;text-decoration:none}
 a:hover{text-decoration:underline}
 .row{margin:8px 0}
 .btn{border:1px solid #999;background:#f7f7f7;padding:5px 9px;cursor:pointer}
-select{min-width:320px;min-height:220px}
+select{min-width:320px;min-height:240px}
 .brand{border:1px solid #ddd;padding:8px;margin:10px 0}
 .brandhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .box{margin-top:8px;padding-left:8px}
@@ -23,8 +23,8 @@ th{background:#f5f5f5}
 img.p{width:50px;height:50px;object-fit:contain;background:#fff;display:block}
 .vwrap{margin:6px 0 12px 22px}
 .small{font-size:12px;color:#666}
-.linkcell a{word-break:break-all}
 .pitem{margin:6px 0}
+.linkcell a{word-break:break-all}
 </style>
 </head>
 <body>
@@ -44,13 +44,12 @@ img.p{width:50px;height:50px;object-fit:contain;background:#fff;display:block}
 const API="https://13.tvkapora.workers.dev";
 
 const BRANDS=[
-  {name:"Rode",url:"https://compel.com.tr/brand/24-rode"},
-  {name:"Rode X",url:"https://compel.com.tr/brand/45-rode-x"},
-  {name:"Arturia",url:"https://compel.com.tr/brand/4-arturia"},
   {name:"Ableton",url:"https://compel.com.tr/brand/1-ableton"},
   {name:"Allen & Heath",url:"https://compel.com.tr/brand/48-allen-heath"},
+  {name:"Arturia",url:"https://compel.com.tr/brand/4-arturia"},
   {name:"Avalon",url:"https://compel.com.tr/brand/6-avalon"},
   {name:"Avid",url:"https://compel.com.tr/brand/7-avid"},
+  {name:"Compel",url:"https://compel.com.tr/brand/49-compel"},
   {name:"Cranborne Audio",url:"https://compel.com.tr/brand/41-cranborne-audio"},
   {name:"Crane Song",url:"https://compel.com.tr/brand/9-crane-song"},
   {name:"Denon DJ",url:"https://compel.com.tr/brand/10-denon-dj"},
@@ -64,6 +63,8 @@ const BRANDS=[
   {name:"Numark",url:"https://compel.com.tr/brand/20-numark"},
   {name:"PreSonus",url:"https://compel.com.tr/brand/21-presonus"},
   {name:"Rane",url:"https://compel.com.tr/brand/23-rane"},
+  {name:"Rode",url:"https://compel.com.tr/brand/24-rode"},
+  {name:"Rode X",url:"https://compel.com.tr/brand/45-rode-x"},
   {name:"Rupert Neve Designs",url:"https://compel.com.tr/brand/25-rupert-neve-designs"},
   {name:"Sheeran Loopers",url:"https://compel.com.tr/brand/47-sheeran-loopers"},
   {name:"Sibelius",url:"https://compel.com.tr/brand/26-sibelius"},
@@ -90,8 +91,8 @@ document.getElementById("listBtn").onclick=()=>{
   ids.forEach(i=>renderBrand(BRANDS[i]));
 };
 
-async function J(u,o){
-  const r=await fetch(u,o||{});
+async function J(u){
+  const r=await fetch(u);
   return r.json();
 }
 
