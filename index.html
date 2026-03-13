@@ -4,27 +4,10 @@
 <div style="position:relative;display:inline-block">
 <button onclick="x.hidden=!x.hidden">Marka Seç</button>
 
-<div id="x" hidden style="position:absolute;background:#fff;border:1px solid #999;max-height:240px;overflow:auto;min-width:260px">
+<div id="x" hidden style="position:absolute;background:#fff;border:1px solid #999;max-height:240px;overflow:auto">
 
-<label><input type="checkbox" value="Ableton|https://compel.com.tr/brand/1-ableton|10"> Ableton</label><br>
-<label><input type="checkbox" value="Allen Heath|https://compel.com.tr/brand/48-allen-heath|8"> Allen Heath</label><br>
-<label><input type="checkbox" value="Arturia|https://compel.com.tr/brand/4-arturia|64"> Arturia</label><br>
-<label><input type="checkbox" value="Avalon|https://compel.com.tr/brand/6-avalon|4"> Avalon</label><br>
-<label><input type="checkbox" value="Avid|https://compel.com.tr/brand/7-avid|16"> Avid</label><br>
-<label><input type="checkbox" value="Compel|https://compel.com.tr/brand/49-compel|3"> Compel</label><br>
-<label><input type="checkbox" value="Cranborne Audio|https://compel.com.tr/brand/41-cranborne-audio|9"> Cranborne Audio</label><br>
-<label><input type="checkbox" value="Crane Song|https://compel.com.tr/brand/9-crane-song|6"> Crane Song</label><br>
-<label><input type="checkbox" value="Denon DJ|https://compel.com.tr/brand/10-denon-dj|10"> Denon DJ</label><br>
-<label><input type="checkbox" value="Fender Studio|https://compel.com.tr/brand/50-fender-studio|12"> Fender Studio</label><br>
-<label><input type="checkbox" value="Genelec|https://compel.com.tr/brand/11-genelec|25"> Genelec</label><br>
-<label><input type="checkbox" value="HeadRush|https://compel.com.tr/brand/12-headrush|8"> HeadRush</label><br>
-<label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa|296"> Hosa</label><br>
-<label><input type="checkbox" value="M-Audio|https://compel.com.tr/brand/16-m-audio|50"> M-Audio</label><br>
-<label><input type="checkbox" value="Marantz Professional|https://compel.com.tr/brand/17-marantz-professional|9"> Marantz Professional</label><br>
-<label><input type="checkbox" value="Numark|https://compel.com.tr/brand/20-numark|33"> Numark</label><br>
-<label><input type="checkbox" value="PreSonus|https://compel.com.tr/brand/21-presonus|97"> PreSonus</label><br>
-<label><input type="checkbox" value="Rane|https://compel.com.tr/brand/23-rane|10"> Rane</label><br>
 <label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode|246"> Rode</label><br>
+<label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa|296"> Hosa</label><br>
 
 </div>
 </div>
@@ -35,6 +18,8 @@
 
 <script>
 
+let W="https://13.tvkapora.workers.dev"
+
 onmousedown=e=>x.hidden||x.contains(e.target)||e.target==x.previousElementSibling||(x.hidden=1)
 
 async function f(){
@@ -44,11 +29,7 @@ let [name,url,count]=x.value.split('|')
 return {name,url,count:+count}
 })
 
-if(!a.length)return o.textContent='Marka seç'
-
-o.textContent='Yükleniyor...'
-
-let r=await fetch('https://13.tvkapora.workers.dev',{
+let r=await fetch(W,{
 method:'POST',
 headers:{'content-type':'application/json'},
 body:JSON.stringify(a)
@@ -57,25 +38,31 @@ body:JSON.stringify(a)
 let j=await r.json(),t=''
 
 j.forEach(x=>{
+
 t+=x.name+' : '+x.old+' / '+x.now+'\n'
 
-for(let i=1;i<=Math.ceil((x.now||x.old)/20);i++){
+for(let i=1;i<=Math.ceil(x.now/20);i++){
+
 let u=i<2?x.url:x.url+'?page='+i
+
 t+=u+'\n'
 t+='▼ Ürünler: '+u+'\n'
+
 }
 
 t+='\n'
+
 })
 
 o.textContent=t
 
 ;[...o.textContent.matchAll(/▼ Ürünler: (.+)/g)].forEach(m=>{
-let s=o.innerHTML.replace(
+
+o.innerHTML=o.innerHTML.replace(
 '▼ Ürünler: '+m[1],
-'<span style="cursor:pointer;color:blue" onclick="g(this,\''+m[1].replace(/'/g,"&#39;")+'\')">▼ Ürünler</span><div></div>'
+'<span onclick="g(this,\''+m[1]+'\')" style="cursor:pointer;color:blue">▼ Ürünler</span><div></div>'
 )
-o.innerHTML=s
+
 })
 
 }
@@ -85,27 +72,32 @@ async function g(el,u){
 let box=el.nextElementSibling
 
 if(el.dataset.open){
+
+box.innerHTML=''
 el.dataset.open=''
 el.textContent='▼ Ürünler'
-box.innerHTML=''
+
 return
+
 }
 
-el.textContent='Yükleniyor...'
+el.textContent="Yükleniyor..."
 
-let r=await fetch('https://13.tvkapora.workers.dev?products='+encodeURIComponent(u))
+let r=await fetch(W+"?products="+encodeURIComponent(u))
+
 let j=await r.json()
 
 box.innerHTML=j.map(v=>`
 <div>
 <a href="${v}" target="_blank">${v}</a>
-<span style="cursor:pointer;color:red" onclick="info(this,'${v}')"> ▶ Bilgi</span>
+<span onclick="info(this,'${v}')" style="cursor:pointer;color:red"> ▶ Bilgi</span>
+${v.includes('#')?'<span onclick="varlist(this,\''+v+'\')" style="cursor:pointer;color:green"> ▶ Varyantlar</span>':''}
 <div></div>
 </div>
-`).join('<br>')
+`).join("<br>")
 
 el.dataset.open=1
-el.textContent='▲ Ürünleri Gizle'
+el.textContent="▲ Ürünleri Gizle"
 
 }
 
@@ -114,63 +106,73 @@ async function info(el,link){
 let box=el.nextElementSibling
 
 if(el.dataset.open){
+
+box.innerHTML=''
 el.dataset.open=''
 el.textContent=' ▶ Bilgi'
-box.innerHTML=''
 return
+
 }
 
-el.textContent='Yükleniyor...'
+el.textContent="Yükleniyor..."
 
-let s=await fetch(link).then(r=>r.text())
+let r=await fetch(W+"?product="+encodeURIComponent(link))
 
-let img=(s.match(/large_default\/([^"]+)/)||[])[1]
-if(img)img='https://compel.com.tr/'+img
-
-let name=(s.match(/itemprop="name">([^<]+)/)||[])[1]
-let ean=(s.match(/itemprop="gtin13" content="([^"]+)/)||[])[1]
-let tryf=(s.match(/itemprop="price" content="([^"]+)/)||[])[1]
-let eur=(s.match(/multicurrency_tex_3">([^<]+)/)||[])[1]
-let usd=(s.match(/multicurrency_tex_1">([^<]+)/)||[])[1]
-
-let stok=(s.match(/product-availability[^>]*>([\s\S]*?)<\/span>/)||[])[1]
-if(stok)stok=stok.replace(/<[^>]+>/g,'').trim()
-
-let code=(link.match(/-(\d+)-[^\/]+\.html/)||[])[1]
+let j=await r.json()
 
 box.innerHTML=`
 <table border=1 cellpadding=5>
 <tr>
-<th>Sıra</th>
 <th>Resim</th>
-<th>Marka</th>
-<th>Ürün Kodu</th>
-<th>Ürün Adı</th>
+<th>Kod</th>
+<th>Ad</th>
 <th>Stok</th>
 <th>USD</th>
 <th>EUR</th>
 <th>TRY</th>
 <th>EAN</th>
-<th>Link</th>
 </tr>
 <tr>
-<td>1</td>
-<td><img src="${img}" width=50></td>
-<td>-</td>
-<td>${code||''}</td>
-<td>${name||''}</td>
-<td>${stok||''}</td>
-<td>${usd||''}</td>
-<td>${eur||''}</td>
-<td>${tryf||''}</td>
-<td>${ean||''}</td>
-<td><a href="${link}" target="_blank">Link</a></td>
+<td><img src="${j.img}" width=50></td>
+<td>${j.code||""}</td>
+<td>${j.name||""}</td>
+<td>${j.stock||""}</td>
+<td>${j.usd||""}</td>
+<td>${j.eur||""}</td>
+<td>${j.try||""}</td>
+<td>${j.ean||""}</td>
 </tr>
 </table>
 `
 
 el.dataset.open=1
-el.textContent=' ▼ Gizle'
+el.textContent=" ▼ Gizle"
+
+}
+
+async function varlist(el,link){
+
+let box=el.nextElementSibling
+
+if(el.dataset.open){
+
+box.innerHTML=''
+el.dataset.open=''
+el.textContent=" ▶ Varyantlar"
+return
+
+}
+
+el.textContent="Yükleniyor..."
+
+let r=await fetch(W+"?variants="+encodeURIComponent(link))
+
+let j=await r.json()
+
+box.innerHTML=j.map(v=>`<div><a href="${v}" target="_blank">${v}</a></div>`).join("")
+
+el.dataset.open=1
+el.textContent=" ▼ Varyantları Gizle"
 
 }
 
