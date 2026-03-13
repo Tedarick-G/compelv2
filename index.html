@@ -1,58 +1,32 @@
-<!doctype html>
-<html lang="tr">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tedarick Minimal</title>
-<style>
-body{font:14px system-ui;margin:12px}
-.top{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-#brandWrap{position:relative}
-#brandMenu{display:none;position:absolute;top:100%;left:0;z-index:5;background:#fff;border:1px solid #ccc;padding:8px;min-width:260px;max-height:320px;overflow:auto}
-#brandWrap.open #brandMenu{display:block}
-#brandMenu label{display:block;white-space:nowrap}
-button,input,textarea{font:inherit;padding:6px 12px;border:1px solid #bbb;background:#f3f3f3;color:#111;box-sizing:border-box;height:36px;margin:0;vertical-align:middle}
-textarea{width:120px;min-width:120px;max-width:120px;min-height:36px;max-height:36px;resize:none;overflow:hidden;text-align:center;line-height:22px;padding-top:6px;padding-bottom:6px}
-textarea::placeholder{color:#111;opacity:1}
-.chk{display:inline-flex;align-items:center;justify-content:center;width:36px;min-width:36px;height:36px;border:1px solid #bbb;background:#f3f3f3;box-sizing:border-box;margin:0}
-.chk input{margin:0}
-#status{margin:10px 0}
-#log{margin:8px 0;white-space:pre-wrap;font:12px ui-monospace,monospace;border:1px solid #ccc;padding:6px;min-height:18px}
-#status:empty,#log:empty{display:none}
-.block{margin:14px 0}
-table{border-collapse:collapse;width:100%;margin-top:6px}
-th,td{border:1px solid #ccc;padding:4px;vertical-align:top;text-align:left}
-small{color:#666}
-.meta{margin:4px 0 8px}
-h3{margin:0 0 4px}
-</style>
+<meta charset="UTF-8">
+<title>Compel Scanner</title>
 </head>
+
 <body>
-<div class="top">
-  <div id="brandWrap">
-    <button id="brandBtn" type="button">Marka</button>
-    <div id="brandMenu"></div>
-  </div>
 
-  <button id="tsoftDaily" type="button">T-Soft Veri Yok</button>
-  <button id="csvBtn" type="button">CSV Yükle</button>
-  <label class="chk" title="T-Soft verisini kaydet"><input id="tsoftSave" type="checkbox"></label>
-  <input id="csv" type="file" accept=".csv,text/csv" hidden>
+<h3>Marka Seç</h3>
 
-  <button id="aideDaily" type="button">Aide Veri Yok</button>
-  <textarea id="aideRaw" placeholder="Yapıştır"></textarea>
-  <label class="chk" title="Aide verisini kaydet"><input id="aideSave" type="checkbox"></label>
+<select id="brands" multiple size="10"></select>
 
-  <button id="listBtn" type="button">Listele</button>
-</div>
+<br><br>
 
-<div id="status"></div>
-<pre id="log"></pre>
+<button onclick="scan()">Listele</button>
 
-<div id="l1" class="block"></div>
-<div id="l2" class="block"></div>
-<div id="l3" class="block"></div>
+<table border="1" id="table">
+<tr>
+<th>#</th>
+<th>Ürün</th>
+<th>Stok</th>
+<th>USD</th>
+<th>EUR</th>
+<th>EAN</th>
+</tr>
+</table>
 
-<script type="module" src="./js/app.js"></script>
+<script src="app.js"></script>
+
 </body>
 </html>
