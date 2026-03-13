@@ -14,23 +14,7 @@
 
 <button onclick="f()">Listele</button>
 
-<br><br>
-
-<table border=1 cellpadding=5 id="t">
-<tr>
-<th>Sıra</th>
-<th>Resim</th>
-<th>Marka</th>
-<th>Ürün Kodu</th>
-<th>Ürün Adı</th>
-<th>Stok</th>
-<th>USD</th>
-<th>EUR</th>
-<th>TRY</th>
-<th>EAN</th>
-<th>Link</th>
-</tr>
-</table>
+<pre id="o"></pre>
 
 <script>
 
@@ -43,7 +27,9 @@ let [name,url,count]=x.value.split('|')
 return {name,url,count:+count}
 })
 
-if(!a.length)return
+if(!a.length)return o.textContent='Marka seç'
+
+o.textContent='Yükleniyor...'
 
 let r=await fetch('https://13.tvkapora.workers.dev',{
 method:'POST',
@@ -53,35 +39,89 @@ body:JSON.stringify(a)
 
 let j=await r.json()
 
-for(let b of j){
+let t=''
 
-let pages=Math.ceil(b.now/20)
+j.forEach(x=>{
 
-for(let i=1;i<=pages;i++){
+t+=x.name+' : '+x.old+' / '+x.now+'\n'
 
-let u=i<2?b.url:b.url+'?page='+i
+for(let i=1;i<=Math.ceil((x.now||x.old)/20);i++){
 
-let p=await fetch('https://13.tvkapora.workers.dev?products='+encodeURIComponent(u))
+let u=i<2?x.url:x.url+'?page='+i
 
-let links=await p.json()
+t+=u+'\n'
 
-for(let link of links){
-
-await product(link,b.name)
+t+='▼ Ürünler: '+u+'\n'
 
 }
 
-}
+t+='\n'
+
+})
+
+o.textContent=t
+
+;[...o.textContent.matchAll(/▼ Ürünler: (.+)/g)].forEach(m=>{
+
+let s=o.innerHTML.replace(
+'▼ Ürünler: '+m[1],
+'<span style="cursor:pointer" onclick="g(this,\''+m[1].replace(/'/g,"&#39;")+'\')">▼ Ürünler</span><div></div>'
+)
+
+o.innerHTML=s
+
+})
 
 }
 
+async function g(el,u){
+
+let box=el.nextElementSibling
+
+if(el.dataset.open){
+
+el.dataset.open=''
+el.textContent='▼ Ürünler'
+box.innerHTML=''
+
+return
+
 }
 
-async function product(link,brand){
+el.textContent='Yükleniyor...'
+
+let r=await fetch('https://13.tvkapora.workers.dev?products='+encodeURIComponent(u))
+
+let j=await r.json()
+
+box.innerHTML=j.map(v=>
+'<div><a href="'+v+'" target="_blank">'+v+'</a> <span style="cursor:pointer;color:blue" onclick="d(this,\''+v+'\')">▶ Bilgiler</span><div></div></div>'
+).join('<br>')
+
+el.dataset.open=1
+el.textContent='▲ Ürünleri Gizle'
+
+}
+
+async function d(el,link){
+
+let box=el.nextElementSibling
+
+if(el.dataset.open){
+
+el.dataset.open=''
+el.textContent='▶ Bilgiler'
+box.innerHTML=''
+
+return
+
+}
+
+el.textContent='Yükleniyor...'
 
 let s=await fetch(link).then(r=>r.text())
 
-let img=(s.match(/<img[^>]+id="main-product-image"[^>]+src="([^"]+)/)||[])[1]
+let img=(s.match(/id="main-product-image"[^>]+src="([^"]+)/)||[])[1]
 
 let name=(s.match(/itemprop="name">([^<]+)/)||[])[1]
 
@@ -99,22 +139,23 @@ if(stok)stok=stok.replace(/<[^>]+>/g,'').trim()
 
 let code=(link.match(/-(\d+)-[^\/]+\.html/)||[])[1]
 
-row(img,brand,code,name,stok,usd,eur,tryf,ean,link)
-
-}
-
-let i=0
-
-function row(img,brand,code,name,stok,usd,eur,tryf,ean,link){
-
-i++
-
-let tr=document.createElement("tr")
-
-tr.innerHTML=`
-<td>${i}</td>
+box.innerHTML=`
+<table border=1 cellpadding=5>
+<tr>
+<th>Sıra</th>
+<th>Resim</th>
+<th>Ürün Kodu</th>
+<th>Ürün Adı</th>
+<th>Stok</th>
+<th>USD</th>
+<th>EUR</th>
+<th>TRY</th>
+<th>EAN</th>
+<th>Link</th>
+</tr>
+<tr>
+<td>1</td>
 <td><img src="${img}" width=50></td>
-<td>${brand}</td>
 <td>${code||''}</td>
 <td>${name||''}</td>
 <td>${stok||''}</td>
@@ -122,10 +163,13 @@ tr.innerHTML=`
 <td>${eur||''}</td>
 <td>${tryf||''}</td>
 <td>${ean||''}</td>
-<td><a href="${link}" target=_blank>Link</a></td>
+<td><a href="${link}" target="_blank">Link</a></td>
+</tr>
+</table>
 `
 
-t.appendChild(tr)
+el.dataset.open=1
+el.textContent='▼ Bilgileri Gizle'
 
 }
 
