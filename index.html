@@ -1,14 +1,22 @@
 <!doctype html>
 <meta charset="utf-8">
 
-<select id=b>
-<option value="https://compel.com.tr/brand/24-rode">Rode</option>
-<option value="https://compel.com.tr/brand/13-hosa">Hosa</option>
-</select>
+<div style="position:relative;display:inline-block">
+<button onclick="x.hidden=!x.hidden">Marka Seç</button>
 
-<button onclick=l()>Listele</button>
+<div id="x" hidden style="position:absolute;background:#fff;border:1px solid #999;max-height:240px;overflow:auto;min-width:260px">
 
-<table border=1 cellpadding=5 id=t>
+<label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode|246"> Rode</label><br>
+<label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa|296"> Hosa</label><br>
+
+</div>
+</div>
+
+<button onclick="f()">Listele</button>
+
+<br><br>
+
+<table border=1 cellpadding=5 id="t">
 <tr>
 <th>Sıra</th>
 <th>Resim</th>
@@ -26,27 +34,98 @@
 
 <script>
 
-async function l(){
+onmousedown=e=>x.hidden||x.contains(e.target)||e.target==x.previousElementSibling||(x.hidden=1)
 
-let r=await fetch("WORKER_URL?brand="+b.value)
+async function f(){
+
+let a=[...document.querySelectorAll('#x input:checked')].map(x=>{
+let [name,url,count]=x.value.split('|')
+return {name,url,count:+count}
+})
+
+if(!a.length)return
+
+let r=await fetch('https://13.tvkapora.workers.dev',{
+method:'POST',
+headers:{'content-type':'application/json'},
+body:JSON.stringify(a)
+})
 
 let j=await r.json()
 
-t.innerHTML+=j.map((x,i)=>`
-<tr>
-<td>${i+1}</td>
-<td><img src="${x.img}" width=50></td>
-<td>${x.brand}</td>
-<td>${x.code}</td>
-<td>${x.name}</td>
-<td>${x.stok||""}</td>
-<td>${x.usd||""}</td>
-<td>${x.eur||""}</td>
-<td>${x.try||""}</td>
-<td>${x.ean||""}</td>
-<td><a href="${x.link}" target=_blank>link</a></td>
-</tr>
-`).join("")
+for(let b of j){
+
+let pages=Math.ceil(b.now/20)
+
+for(let i=1;i<=pages;i++){
+
+let u=i<2?b.url:b.url+'?page='+i
+
+let p=await fetch('https://13.tvkapora.workers.dev?products='+encodeURIComponent(u))
+
+let links=await p.json()
+
+for(let link of links){
+
+await product(link,b.name)
+
+}
+
+}
+
+}
+
+}
+
+async function product(link,brand){
+
+let s=await fetch(link).then(r=>r.text())
+
+let img=(s.match(/<img[^>]+id="main-product-image"[^>]+src="([^"]+)/)||[])[1]
+
+let name=(s.match(/itemprop="name">([^<]+)/)||[])[1]
+
+let ean=(s.match(/itemprop="gtin13" content="([^"]+)/)||[])[1]
+
+let tryf=(s.match(/itemprop="price" content="([^"]+)/)||[])[1]
+
+let eur=(s.match(/multicurrency_tex_3">([^<]+)/)||[])[1]
+
+let usd=(s.match(/multicurrency_tex_1">([^<]+)/)||[])[1]
+
+let stok=(s.match(/product-availability[^>]*>([\s\S]*?)<\/span>/)||[])[1]
+
+if(stok)stok=stok.replace(/<[^>]+>/g,'').trim()
+
+let code=(link.match(/-(\d+)-[^\/]+\.html/)||[])[1]
+
+row(img,brand,code,name,stok,usd,eur,tryf,ean,link)
+
+}
+
+let i=0
+
+function row(img,brand,code,name,stok,usd,eur,tryf,ean,link){
+
+i++
+
+let tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${i}</td>
+<td><img src="${img}" width=50></td>
+<td>${brand}</td>
+<td>${code||''}</td>
+<td>${name||''}</td>
+<td>${stok||''}</td>
+<td>${usd||''}</td>
+<td>${eur||''}</td>
+<td>${tryf||''}</td>
+<td>${ean||''}</td>
+<td><a href="${link}" target=_blank>Link</a></td>
+`
+
+t.appendChild(tr)
 
 }
 
