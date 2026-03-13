@@ -3,43 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Compel Marka / Ürün / Varyant</title>
+<title>Compel Liste</title>
 <style>
-body{font:13px/1.4 Arial,sans-serif;background:#fff;color:#111;margin:16px}
+body{font:13px Arial,sans-serif;margin:16px;color:#111}
 a{color:#06c;text-decoration:none}
 a:hover{text-decoration:underline}
-.row{margin:6px 0}
-.brand{padding:8px 10px;border:1px solid #ddd;margin:8px 0}
+.row{margin:8px 0}
+.btn{border:1px solid #999;background:#f7f7f7;padding:5px 9px;cursor:pointer}
+select{min-width:320px;min-height:220px}
+.brand{border:1px solid #ddd;padding:8px;margin:10px 0}
 .brandhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn{border:1px solid #999;background:#f7f7f7;padding:4px 8px;cursor:pointer}
 .box{margin-top:8px;padding-left:8px}
-.small{font-size:12px;color:#666}
+.hidden{display:none}
+.loading{color:#666}
 .err{color:#b00}
-.ok{color:#080}
 table{border-collapse:collapse;width:100%;margin:8px 0}
 th,td{border:1px solid #ddd;padding:6px;vertical-align:top;text-align:left}
 th{background:#f5f5f5}
 img.p{width:50px;height:50px;object-fit:contain;background:#fff;display:block}
-.linkcell a{word-break:break-all}
-.toggle{cursor:pointer;color:#06c}
-.hidden{display:none}
-.loading{color:#666}
 .vwrap{margin:6px 0 12px 22px}
+.small{font-size:12px;color:#666}
+.linkcell a{word-break:break-all}
 </style>
 </head>
 <body>
+
+<div class="row"><b>Marka Seç</b></div>
 <div class="row">
-  <button class="btn" id="loadBrands">Markaları Yükle</button>
-  <span class="small">temel görünüm</span>
+  <select id="brands" multiple></select>
+</div>
+<div class="row">
+  <button class="btn" id="listBtn">Listele</button>
+  <span class="small">Ctrl/Cmd ile çoklu seçim</span>
 </div>
 
-<div id="brands"></div>
+<div id="out"></div>
 
 <script>
 const API="https://13.tvkapora.workers.dev";
 
-const brandsEl=document.getElementById("brands");
-document.getElementById("loadBrands").onclick=loadBrands;
+const BRANDS=[
+  {name:"Rode",url:"https://compel.com.tr/brand/24-rode"},
+  {name:"Rode X",url:"https://compel.com.tr/brand/45-rode-x"},
+  {name:"Arturia",url:"https://compel.com.tr/brand/4-arturia"},
+  {name:"Ableton",url:"https://compel.com.tr/brand/1-ableton"},
+  {name:"Allen & Heath",url:"https://compel.com.tr/brand/48-allen-heath"},
+  {name:"Avalon",url:"https://compel.com.tr/brand/6-avalon"},
+  {name:"Avid",url:"https://compel.com.tr/brand/7-avid"},
+  {name:"Cranborne Audio",url:"https://compel.com.tr/brand/41-cranborne-audio"},
+  {name:"Crane Song",url:"https://compel.com.tr/brand/9-crane-song"},
+  {name:"Denon DJ",url:"https://compel.com.tr/brand/10-denon-dj"},
+  {name:"Fender Studio",url:"https://compel.com.tr/brand/50-fender-studio"},
+  {name:"Genelec",url:"https://compel.com.tr/brand/11-genelec"},
+  {name:"Headrush",url:"https://compel.com.tr/brand/12-headrush"},
+  {name:"Hosa",url:"https://compel.com.tr/brand/13-hosa"},
+  {name:"M-Audio",url:"https://compel.com.tr/brand/16-m-audio"},
+  {name:"M-GAME",url:"https://compel.com.tr/brand/44-m-game"},
+  {name:"Marantz Professional",url:"https://compel.com.tr/brand/17-marantz-professional"},
+  {name:"Numark",url:"https://compel.com.tr/brand/20-numark"},
+  {name:"PreSonus",url:"https://compel.com.tr/brand/21-presonus"},
+  {name:"Rane",url:"https://compel.com.tr/brand/23-rane"},
+  {name:"Rupert Neve Designs",url:"https://compel.com.tr/brand/25-rupert-neve-designs"},
+  {name:"Sheeran Loopers",url:"https://compel.com.tr/brand/47-sheeran-loopers"},
+  {name:"Sibelius",url:"https://compel.com.tr/brand/26-sibelius"},
+  {name:"Sonarworks",url:"https://compel.com.tr/brand/28-sonarworks"},
+  {name:"SoundSwitch",url:"https://compel.com.tr/brand/43-soundswitch"},
+  {name:"Stanton",url:"https://compel.com.tr/brand/42-stanton"},
+  {name:"Universal Audio",url:"https://compel.com.tr/brand/36-universal-audio"},
+  {name:"Warm Audio",url:"https://compel.com.tr/brand/38-warm-audio"}
+];
+
+const sel=document.getElementById("brands");
+const out=document.getElementById("out");
+
+BRANDS.forEach((b,i)=>{
+  let o=document.createElement("option");
+  o.value=i;
+  o.textContent=b.name;
+  sel.appendChild(o);
+});
+
+document.getElementById("listBtn").onclick=()=>{
+  out.innerHTML="";
+  let ids=[...sel.selectedOptions].map(x=>+x.value);
+  ids.forEach(i=>renderBrand(BRANDS[i]));
+};
 
 async function j(u,o){
   let r=await fetch(u,o||{});
@@ -49,8 +97,6 @@ async function j(u,o){
 function esc(s){
   return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 }
-
-function td(v){ return "<td>"+(v==null?"":v)+"</td>"; }
 
 function rowHtml(x,i){
   return `<tr>
@@ -89,31 +135,21 @@ function tableHtml(list){
   </table>`;
 }
 
-async function loadBrands(){
-  brandsEl.innerHTML='<div class="loading">yükleniyor...</div>';
-  try{
-    let list=await j(API+"?brands=1");
-    brandsEl.innerHTML="";
-    list.forEach(b=>{
-      let d=document.createElement("div");
-      d.className="brand";
-      d.innerHTML=`
-        <div class="brandhead">
-          <b>${esc(b.name)}</b>
-          <span>${esc(b.count||0)} ürün</span>
-          <a href="${esc(b.url)}" target="_blank">${esc(b.url)}</a>
-          <button class="btn">Ürünleri Aç</button>
-        </div>
-        <div class="box hidden"></div>
-      `;
-      let btn=d.querySelector("button");
-      let box=d.querySelector(".box");
-      btn.onclick=()=>toggleProducts(b,box,btn);
-      brandsEl.appendChild(d);
-    });
-  }catch(e){
-    brandsEl.innerHTML='<div class="err">markalar alınamadı</div>';
-  }
+function renderBrand(b){
+  let d=document.createElement("div");
+  d.className="brand";
+  d.innerHTML=`
+    <div class="brandhead">
+      <b>${esc(b.name)}</b>
+      <a href="${esc(b.url)}" target="_blank">${esc(b.url)}</a>
+      <button class="btn">Ürünleri Aç</button>
+    </div>
+    <div class="box hidden"></div>
+  `;
+  let btn=d.querySelector("button");
+  let box=d.querySelector(".box");
+  btn.onclick=()=>toggleProducts(b,box,btn);
+  out.appendChild(d);
 }
 
 async function toggleProducts(b,box,btn){
@@ -122,8 +158,8 @@ async function toggleProducts(b,box,btn){
     btn.textContent="Ürünleri Aç";
     return;
   }
-  btn.textContent="Kapat";
   box.classList.remove("hidden");
+  btn.textContent="Kapat";
   if(box.dataset.loaded)return;
 
   box.innerHTML='<div class="loading">ürün linkleri geliyor...</div>';
@@ -147,14 +183,14 @@ async function toggleProducts(b,box,btn){
       r.className="row";
       r.innerHTML=`
         <span>${i+1}.</span>
-        <a href="#" class="toggle">${esc(u)}</a>
+        <a href="#" class="plink">${esc(u)}</a>
         <div class="pdata hidden"></div>
       `;
-      let t=r.querySelector(".toggle");
+      let plink=r.querySelector(".plink");
       let pdata=r.querySelector(".pdata");
-      t.onclick=ev=>{
-        ev.preventDefault();
-        toggleProduct(u,pdata,b.name);
+      plink.onclick=e=>{
+        e.preventDefault();
+        toggleDetail(u,pdata,b.name);
       };
       box.appendChild(r);
     });
@@ -165,7 +201,7 @@ async function toggleProducts(b,box,btn){
   }
 }
 
-async function toggleProduct(url,el,brand){
+async function toggleDetail(url,el,brand){
   if(!el.classList.contains("hidden")){
     el.classList.add("hidden");
     return;
@@ -173,9 +209,10 @@ async function toggleProduct(url,el,brand){
   el.classList.remove("hidden");
   if(el.dataset.loaded)return;
 
-  el.innerHTML='<div class="loading">ürün bilgisi geliyor...</div>';
+  el.innerHTML='<div class="loading">yükleniyor...</div>';
   try{
     let x=await j(API+"?detail="+encodeURIComponent(url)+"&brand="+encodeURIComponent(brand));
+
     let main=[{
       image:x.image||"",
       brand:x.brand||brand||"",
@@ -192,18 +229,20 @@ async function toggleProduct(url,el,brand){
     let h=tableHtml(main);
 
     if(x.variants&&x.variants.length){
-      h+=`<div class="vwrap"><div><a href="#" class="vt">Varyantlar (${x.variants.length})</a></div><div class="vbox hidden">${tableHtml(x.variants)}</div></div>`;
+      h+=`<div class="vwrap">
+        <a href="#" class="vbtn">Varyantlar (${x.variants.length})</a>
+        <div class="vbox hidden">${tableHtml(x.variants)}</div>
+      </div>`;
     }
 
     el.innerHTML=h;
     el.dataset.loaded="1";
 
-    let vt=el.querySelector(".vt");
-    if(vt){
-      vt.onclick=ev=>{
-        ev.preventDefault();
-        let vb=el.querySelector(".vbox");
-        vb.classList.toggle("hidden");
+    let vb=el.querySelector(".vbtn");
+    if(vb){
+      vb.onclick=e=>{
+        e.preventDefault();
+        el.querySelector(".vbox").classList.toggle("hidden");
       };
     }
   }catch(e){
