@@ -1,32 +1,45 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Compel Scanner</title>
-</head>
+<meta charset=utf-8>
+<select id=m multiple size=10>
+<option value="https://compel.com.tr/brand/1-ableton">Ableton</option>
+<option value="https://compel.com.tr/brand/48-allen-heath">Allen Heath</option>
+<option value="https://compel.com.tr/brand/4-arturia">Arturia</option>
+<option value="https://compel.com.tr/brand/6-avalon">Avalon</option>
+<option value="https://compel.com.tr/brand/7-avid">Avid</option>
+<option value="https://compel.com.tr/brand/49-compel">Compel</option>
+<option value="https://compel.com.tr/brand/41-cranborne-audio">Cranborne Audio</option>
+<option value="https://compel.com.tr/brand/9-crane-song">Crane Song</option>
+<option value="https://compel.com.tr/brand/10-denon-dj">Denon DJ</option>
+<option value="https://compel.com.tr/brand/50-fender-studio">Fender Studio</option>
+<option value="https://compel.com.tr/brand/11-genelec">Genelec</option>
+<option value="https://compel.com.tr/brand/12-headrush">HeadRush</option>
+<option value="https://compel.com.tr/brand/13-hosa">Hosa</option>
+<option value="https://compel.com.tr/brand/16-m-audio">M-Audio</option>
+<option value="https://compel.com.tr/brand/44-m-game">M-Game</option>
+<option value="https://compel.com.tr/brand/17-marantz-professional">Marantz Professional</option>
+<option value="https://compel.com.tr/brand/20-numark">Numark</option>
+<option value="https://compel.com.tr/brand/21-presonus">PreSonus</option>
+<option value="https://compel.com.tr/brand/23-rane">Rane</option>
+<option value="https://compel.com.tr/brand/25-rupert-neve-designs">Rupert Neve</option>
+<option value="https://compel.com.tr/brand/24-rode">Rode</option>
+<option value="https://compel.com.tr/brand/45-rode-x">Rode X</option>
+<option value="https://compel.com.tr/brand/47-sheeran-loopers">Sheeran</option>
+<option value="https://compel.com.tr/brand/26-sibelius">Sibelius</option>
+<option value="https://compel.com.tr/brand/28-sonarworks">Sonarworks</option>
+<option value="https://compel.com.tr/brand/43-soundswitch">SoundSwitch</option>
+<option value="https://compel.com.tr/brand/42-stanton">Stanton</option>
+<option value="https://compel.com.tr/brand/36-universal-audio">Universal Audio</option>
+<option value="https://compel.com.tr/brand/38-warm-audio">Warm Audio</option>
+</select>
 
-<body>
+<br><button onclick=f()>Listele</button>
 
-<h3>Marka Seç</h3>
+<pre id=o></pre>
 
-<select id="brands" multiple size="10"></select>
-
-<br><br>
-
-<button onclick="scan()">Listele</button>
-
-<table border="1" id="table">
-<tr>
-<th>#</th>
-<th>Ürün</th>
-<th>Stok</th>
-<th>USD</th>
-<th>EUR</th>
-<th>EAN</th>
-</tr>
-</table>
-
-<script src="app.js"></script>
-
-</body>
-</html>
+<script>
+async function f(){
+let s=[...m.selectedOptions].map(x=>x.value)
+let r=await fetch("WORKER_URL",{method:"POST",body:JSON.stringify(s)})
+o.textContent=await r.text()
+}
+</script>
