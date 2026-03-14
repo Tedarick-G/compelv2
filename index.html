@@ -1,143 +1,289 @@
 <!doctype html>
-<meta charset="utf-8">
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compel Brand Index</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#f7f7f7;color:#222}
+    .box{background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:16px}
+    button{cursor:pointer;padding:10px 14px;border:1px solid #888;border-radius:8px;background:#fff}
+    input[type="text"]{width:100%;padding:10px;border:1px solid #bbb;border-radius:8px}
+    table{width:100%;border-collapse:collapse;background:#fff}
+    th,td{border:1px solid #ddd;padding:8px;font-size:13px;vertical-align:top}
+    th{background:#f0f0f0;position:sticky;top:0}
+    .muted{color:#666;font-size:12px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 320px}
+    .dropdown{position:relative;display:inline-block}
+    .menu{position:absolute;left:0;top:42px;background:#fff;border:1px solid #999;max-height:260px;overflow:auto;min-width:280px;z-index:999;border-radius:8px;padding:10px}
+    .menu label{display:block;margin:4px 0}
+    .log{white-space:pre-wrap;background:#111;color:#0f0;padding:12px;border-radius:8px;min-height:120px}
+    .thumb{max-width:72px;max-height:72px;object-fit:contain}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee;font-size:12px}
+  </style>
+</head>
+<body>
 
-<div style="position:relative;display:inline-block">
-  <button onclick="x.hidden=!x.hidden">Marka Seç</button>
-  <div id="x" hidden style="position:absolute;background:#fff;border:1px solid #999;max-height:240px;overflow:auto;min-width:260px;z-index:9">
-    <label><input type="checkbox" value="Ableton|https://compel.com.tr/brand/1-ableton|10"> Ableton</label><br>
-    <label><input type="checkbox" value="Allen Heath|https://compel.com.tr/brand/48-allen-heath|8"> Allen Heath</label><br>
-    <label><input type="checkbox" value="Arturia|https://compel.com.tr/brand/4-arturia|64"> Arturia</label><br>
-    <label><input type="checkbox" value="Avalon|https://compel.com.tr/brand/6-avalon|4"> Avalon</label><br>
-    <label><input type="checkbox" value="Avid|https://compel.com.tr/brand/7-avid|16"> Avid</label><br>
-    <label><input type="checkbox" value="Compel|https://compel.com.tr/brand/49-compel|3"> Compel</label><br>
-    <label><input type="checkbox" value="Cranborne Audio|https://compel.com.tr/brand/41-cranborne-audio|9"> Cranborne Audio</label><br>
-    <label><input type="checkbox" value="Crane Song|https://compel.com.tr/brand/9-crane-song|6"> Crane Song</label><br>
-    <label><input type="checkbox" value="Denon DJ|https://compel.com.tr/brand/10-denon-dj|10"> Denon DJ</label><br>
-    <label><input type="checkbox" value="Fender Studio|https://compel.com.tr/brand/50-fender-studio|12"> Fender Studio</label><br>
-    <label><input type="checkbox" value="Genelec|https://compel.com.tr/brand/11-genelec|25"> Genelec</label><br>
-    <label><input type="checkbox" value="HeadRush|https://compel.com.tr/brand/12-headrush|8"> HeadRush</label><br>
-    <label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa|296"> Hosa</label><br>
-    <label><input type="checkbox" value="M-Audio|https://compel.com.tr/brand/16-m-audio|50"> M-Audio</label><br>
-    <label><input type="checkbox" value="M-Game|https://compel.com.tr/brand/44-m-game|2"> M-Game</label><br>
-    <label><input type="checkbox" value="Marantz Professional|https://compel.com.tr/brand/17-marantz-professional|9"> Marantz Professional</label><br>
-    <label><input type="checkbox" value="Numark|https://compel.com.tr/brand/20-numark|33"> Numark</label><br>
-    <label><input type="checkbox" value="PreSonus|https://compel.com.tr/brand/21-presonus|97"> PreSonus</label><br>
-    <label><input type="checkbox" value="Rane|https://compel.com.tr/brand/23-rane|10"> Rane</label><br>
-    <label><input type="checkbox" value="Rupert Neve Designs|https://compel.com.tr/brand/25-rupert-neve-designs|8"> Rupert Neve Designs</label><br>
-    <label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode|246"> Rode</label><br>
-    <label><input type="checkbox" value="Rode X|https://compel.com.tr/brand/45-rode-x|3"> Rode X</label><br>
-    <label><input type="checkbox" value="Sheeran Loopers|https://compel.com.tr/brand/47-sheeran-loopers|2"> Sheeran Loopers</label><br>
-    <label><input type="checkbox" value="Sibelius|https://compel.com.tr/brand/26-sibelius|6"> Sibelius</label><br>
-    <label><input type="checkbox" value="Sonarworks|https://compel.com.tr/brand/28-sonarworks|12"> Sonarworks</label><br>
-    <label><input type="checkbox" value="SoundSwitch|https://compel.com.tr/brand/43-soundswitch|1"> SoundSwitch</label><br>
-    <label><input type="checkbox" value="Stanton|https://compel.com.tr/brand/42-stanton|3"> Stanton</label><br>
-    <label><input type="checkbox" value="Universal Audio|https://compel.com.tr/brand/36-universal-audio|72"> Universal Audio</label><br>
-    <label><input type="checkbox" value="Warm Audio|https://compel.com.tr/brand/38-warm-audio|79"> Warm Audio</label><br>
+  <div class="box">
+    <h2>Compel Brand Index</h2>
+    <div class="row">
+      <div class="col">
+        <label>Worker URL</label>
+        <input id="workerUrl" type="text" value="https://13.tvkapora.workers.dev/">
+        <div class="muted">Sonunda slash olsa da olur olmasa da olur.</div>
+      </div>
+    </div>
   </div>
-</div>
 
-<button onclick="f()">Listele</button>
-<pre id="o"></pre>
+  <div class="box">
+    <div class="row" style="align-items:center">
+      <div class="dropdown">
+        <button id="brandBtn" type="button">Marka Seç</button>
+        <div id="brandMenu" class="menu" hidden>
+          <label><input type="checkbox" value="Ableton|https://compel.com.tr/brand/1-ableton|10"> Ableton</label>
+          <label><input type="checkbox" value="Allen Heath|https://compel.com.tr/brand/48-allen-heath|8"> Allen Heath</label>
+          <label><input type="checkbox" value="Arturia|https://compel.com.tr/brand/4-arturia|64"> Arturia</label>
+          <label><input type="checkbox" value="Avalon|https://compel.com.tr/brand/6-avalon|4"> Avalon</label>
+          <label><input type="checkbox" value="Avid|https://compel.com.tr/brand/7-avid|16"> Avid</label>
+          <label><input type="checkbox" value="Compel|https://compel.com.tr/brand/49-compel|3"> Compel</label>
+          <label><input type="checkbox" value="Cranborne Audio|https://compel.com.tr/brand/41-cranborne-audio|9"> Cranborne Audio</label>
+          <label><input type="checkbox" value="Crane Song|https://compel.com.tr/brand/9-crane-song|6"> Crane Song</label>
+          <label><input type="checkbox" value="Denon DJ|https://compel.com.tr/brand/10-denon-dj|10"> Denon DJ</label>
+          <label><input type="checkbox" value="Fender Studio|https://compel.com.tr/brand/50-fender-studio|12"> Fender Studio</label>
+          <label><input type="checkbox" value="Genelec|https://compel.com.tr/brand/11-genelec|25"> Genelec</label>
+          <label><input type="checkbox" value="HeadRush|https://compel.com.tr/brand/12-headrush|8"> HeadRush</label>
+          <label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa|296"> Hosa</label>
+          <label><input type="checkbox" value="M-Audio|https://compel.com.tr/brand/16-m-audio|50"> M-Audio</label>
+          <label><input type="checkbox" value="M-Game|https://compel.com.tr/brand/44-m-game|2"> M-Game</label>
+          <label><input type="checkbox" value="Marantz Professional|https://compel.com.tr/brand/17-marantz-professional|9"> Marantz Professional</label>
+          <label><input type="checkbox" value="Numark|https://compel.com.tr/brand/20-numark|33"> Numark</label>
+          <label><input type="checkbox" value="PreSonus|https://compel.com.tr/brand/21-presonus|97"> PreSonus</label>
+          <label><input type="checkbox" value="Rane|https://compel.com.tr/brand/23-rane|10"> Rane</label>
+          <label><input type="checkbox" value="Rupert Neve Designs|https://compel.com.tr/brand/25-rupert-neve-designs|8"> Rupert Neve Designs</label>
+          <label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode|246"> Rode</label>
+          <label><input type="checkbox" value="Rode X|https://compel.com.tr/brand/45-rode-x|3"> Rode X</label>
+          <label><input type="checkbox" value="Sheeran Loopers|https://compel.com.tr/brand/47-sheeran-loopers|2"> Sheeran Loopers</label>
+          <label><input type="checkbox" value="Sibelius|https://compel.com.tr/brand/26-sibelius|6"> Sibelius</label>
+          <label><input type="checkbox" value="Sonarworks|https://compel.com.tr/brand/28-sonarworks|12"> Sonarworks</label>
+          <label><input type="checkbox" value="SoundSwitch|https://compel.com.tr/brand/43-soundswitch|1"> SoundSwitch</label>
+          <label><input type="checkbox" value="Stanton|https://compel.com.tr/brand/42-stanton|3"> Stanton</label>
+          <label><input type="checkbox" value="Universal Audio|https://compel.com.tr/brand/36-universal-audio|72"> Universal Audio</label>
+          <label><input type="checkbox" value="Warm Audio|https://compel.com.tr/brand/38-warm-audio|79"> Warm Audio</label>
+        </div>
+      </div>
+
+      <button id="selectAllBtn" type="button">Tümünü Seç</button>
+      <button id="clearBtn" type="button">Temizle</button>
+      <button id="runBtn" type="button">Listele</button>
+      <button id="downloadBtn" type="button">JSON İndir</button>
+      <span id="selectedInfo" class="badge">0 marka seçili</span>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>İşlem Günlüğü</h3>
+    <div id="log" class="log"></div>
+  </div>
+
+  <div class="box">
+    <h3>Sonuçlar</h3>
+    <div class="muted" id="summary"></div>
+    <div style="overflow:auto;max-height:70vh;margin-top:10px">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Görsel</th>
+            <th>Marka</th>
+            <th>Ürün</th>
+            <th>Varyant</th>
+            <th>SKU</th>
+            <th>EAN</th>
+            <th>Kategori</th>
+            <th>Fiyat</th>
+            <th>USD KDV Hariç</th>
+            <th>EUR KDV Hariç</th>
+            <th>Stok</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
 
 <script>
-const W = 'https://13.tvkapora.workers.dev';
+const brandBtn = document.getElementById("brandBtn");
+const brandMenu = document.getElementById("brandMenu");
+const selectedInfo = document.getElementById("selectedInfo");
+const logEl = document.getElementById("log");
+const tbody = document.getElementById("tbody");
+const summary = document.getElementById("summary");
+const workerUrlInput = document.getElementById("workerUrl");
 
-onmousedown = e => x.hidden || x.contains(e.target) || e.target == x.previousElementSibling || (x.hidden = 1);
+let lastResults = [];
 
-async function f() {
-  let a = [...document.querySelectorAll('#x input:checked')].map(x => {
-    let [name, url, count] = x.value.split('|');
-    return { name, url, count: +count };
+brandBtn.onclick = () => {
+  brandMenu.hidden = !brandMenu.hidden;
+};
+
+document.addEventListener("click", (e) => {
+  if (!brandMenu.contains(e.target) && e.target !== brandBtn) {
+    brandMenu.hidden = true;
+  }
+});
+
+brandMenu.addEventListener("change", updateSelectedInfo);
+document.getElementById("selectAllBtn").onclick = () => {
+  [...brandMenu.querySelectorAll('input[type="checkbox"]')].forEach(x => x.checked = true);
+  updateSelectedInfo();
+};
+document.getElementById("clearBtn").onclick = () => {
+  [...brandMenu.querySelectorAll('input[type="checkbox"]')].forEach(x => x.checked = false);
+  updateSelectedInfo();
+};
+
+document.getElementById("runBtn").onclick = run;
+document.getElementById("downloadBtn").onclick = downloadJson;
+
+updateSelectedInfo();
+
+function updateSelectedInfo() {
+  const count = getSelectedBrands().length;
+  selectedInfo.textContent = `${count} marka seçili`;
+}
+
+function getSelectedBrands() {
+  return [...brandMenu.querySelectorAll('input[type="checkbox"]:checked')].map(x => {
+    const [name, url, count] = x.value.split("|");
+    return {
+      name: (name || "").trim(),
+      url: (url || "").trim(),
+      count: Number(count || 0)
+    };
   });
+}
 
-  if (!a.length) return o.textContent = 'Marka seç';
+function addLog(line) {
+  const now = new Date().toLocaleTimeString("tr-TR");
+  logEl.textContent += `[${now}] ${line}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
 
-  o.textContent = 'Yükleniyor...';
+function clearOutput() {
+  logEl.textContent = "";
+  tbody.innerHTML = "";
+  summary.textContent = "";
+  lastResults = [];
+}
 
-  let r = await fetch(W, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(a)
-  });
+async function run() {
+  clearOutput();
 
-  let j = await r.json(), t = '';
+  const workerBase = workerUrlInput.value.trim().replace(/\/+$/, "");
+  const selected = getSelectedBrands();
 
-  j.forEach(x => {
-    t += x.name + ' : ' + x.old + ' / ' + x.now + (x.diff > 0 ? ' [ ' + x.diff + ' Yeni Ürün ]' : x.diff < 0 ? ' [ ' + (-x.diff) + ' Eksik Ürün ]' : '') + '\n';
-    for (let i = 1; i <= Math.ceil((x.now || x.old) / 20); i++) {
-      let u = i < 2 ? x.url : x.url + '?page=' + i;
-      t += u + '\n';
-      t += '▼ Ürünler: ' + u + '\n';
+  if (!workerBase) {
+    alert("Worker URL gir.");
+    return;
+  }
+
+  if (!selected.length) {
+    alert("En az bir marka seç.");
+    return;
+  }
+
+  addLog(`Toplam ${selected.length} marka işlenecek...`);
+
+  const allRows = [];
+  let totalBrandSuccess = 0;
+  let totalBrandFail = 0;
+
+  for (const brand of selected) {
+    const endpoint = `${workerBase}?u=${encodeURIComponent(brand.url)}&limit=${encodeURIComponent(String(brand.count || ""))}`;
+
+    addLog(`${brand.name} başladı -> ${brand.url}`);
+
+    try {
+      const res = await fetch(endpoint);
+      const data = await res.json();
+
+      if (!res.ok) {
+        totalBrandFail++;
+        addLog(`${brand.name} hata -> ${data?.hata || res.status}`);
+        continue;
+      }
+
+      const rows = Array.isArray(data?.urunler) ? data.urunler : [];
+      totalBrandSuccess++;
+      addLog(`${brand.name} tamamlandı -> ${rows.length} satır`);
+
+      for (const row of rows) {
+        allRows.push(row);
+      }
+    } catch (err) {
+      totalBrandFail++;
+      addLog(`${brand.name} fetch hata -> ${err?.message || "bilinmeyen hata"}`);
     }
-    t += '\n';
-  });
+  }
 
-  o.textContent = t;
+  lastResults = allRows;
+  renderRows(allRows);
 
-  [...o.textContent.matchAll(/▼ Ürünler: (.+)/g)].forEach(m => {
-    let safeUrl = m[1].replace(/'/g, '&#39;');
-    let s = o.innerHTML.replace(
-      '▼ Ürünler: ' + m[1],
-      '<span style="cursor:pointer" onclick="g(this,\'' + safeUrl + '\')">▼ Ürünler</span><div></div>'
-    );
-    o.innerHTML = s;
+  summary.textContent =
+    `Başarılı marka: ${totalBrandSuccess} | Hatalı marka: ${totalBrandFail} | Toplam satır: ${allRows.length}`;
+
+  addLog("İşlem bitti.");
+}
+
+function renderRows(rows) {
+  tbody.innerHTML = "";
+
+  rows.forEach((r, i) => {
+    const tr = document.createElement("tr");
+
+    const imgHtml = r.kapak_gorsel
+      ? `<img class="thumb" src="${escapeHtml(r.kapak_gorsel)}" alt="">`
+      : "";
+
+    tr.innerHTML = `
+      <td>${escapeHtml(r.sira_no || String(i + 1))}</td>
+      <td>${imgHtml}</td>
+      <td>${escapeHtml(r.marka_adi || "")}</td>
+      <td>${escapeHtml(r.urun_adi || "")}</td>
+      <td>${escapeHtml(r.varyant_adi || "")}</td>
+      <td>${escapeHtml(r.sku || "")}</td>
+      <td>${escapeHtml(r.ean || "")}</td>
+      <td>${escapeHtml(r.kategori_adi || "")}</td>
+      <td>${escapeHtml(r.guncel_fiyat || "")}</td>
+      <td>${escapeHtml(r.usd_kdv_haric || "")}</td>
+      <td>${escapeHtml(r.eur_kdv_haric || "")}</td>
+      <td>${escapeHtml(String(r.stok ?? ""))}</td>
+      <td>${r.urun_linki ? `<a href="${escapeHtml(r.urun_linki)}" target="_blank">Aç</a>` : ""}</td>
+    `;
+
+    tbody.appendChild(tr);
   });
 }
 
-async function g(el, u) {
-  let box = el.nextElementSibling;
-
-  if (el.dataset.open) {
-    el.dataset.open = '';
-    el.textContent = '▼ Ürünler';
-    box.innerHTML = '';
-    return;
-  }
-
-  el.textContent = 'Yükleniyor...';
-
-  let r = await fetch(W + '?products=' + encodeURIComponent(u));
-  let j = await r.json();
-
-  box.innerHTML = j.map(v =>
-    '<div style="margin:4px 0 8px 14px">' +
-      '<a href="' + v + '" target="_blank">' + v + '</a>' +
-      '<br>' +
-      '<span style="cursor:pointer" onclick="gv(this,\'' + v.replace(/'/g, '&#39;') + '\')">▼ Varyantlar</span>' +
-      '<div></div>' +
-    '</div>'
-  ).join('') || 'ürün yok';
-
-  el.dataset.open = 1;
-  el.textContent = '▲ Ürünleri Gizle';
+function downloadJson() {
+  const blob = new Blob([JSON.stringify(lastResults, null, 2)], { type: "application/json;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "compel-sonuclar.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-async function gv(el, u) {
-  let box = el.nextElementSibling;
-
-  if (el.dataset.open) {
-    el.dataset.open = '';
-    el.textContent = '▼ Varyantlar';
-    box.innerHTML = '';
-    return;
-  }
-
-  el.textContent = 'Yükleniyor...';
-
-  let r = await fetch(W + '?variants=' + encodeURIComponent(u));
-  let j = await r.json();
-
-  let vars = (j && j.variants) ? j.variants : [];
-
-  box.innerHTML = vars.map(v =>
-    '<div style="margin:4px 0 4px 14px">' +
-      (v.variant_url
-        ? '<a href="' + v.variant_url + '" target="_blank">' + (v.color || v.attribute) + ' → ' + v.variant_url + '</a>'
-        : (v.color || v.attribute) + ' → link yok') +
-    '</div>'
-  ).join('') || 'varyant yok';
-
-  el.dataset.open = 1;
-  el.textContent = '▲ Varyantları Gizle';
+function escapeHtml(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 </script>
+
+</body>
+</html>
