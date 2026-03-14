@@ -5,64 +5,17 @@
 <title>Compel Marka Tarayıcı</title>
 
 <style>
-body{
-font-family:Arial;
-background:#f5f5f5;
-padding:20px;
-}
-
-.box{
-background:#fff;
-padding:15px;
-border:1px solid #ccc;
-border-radius:6px;
-margin-bottom:20px;
-}
-
-button{
-padding:8px 12px;
-cursor:pointer;
-}
-
-#x{
-position:absolute;
-background:#fff;
-border:1px solid #999;
-max-height:260px;
-overflow:auto;
-min-width:320px;
-padding:10px;
-}
-
-.brandRow{
-display:flex;
-align-items:center;
-gap:10px;
-margin-bottom:6px;
-}
-
-.brandRow input[type="number"]{
-width:60px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-font-size:13px;
-}
-
-th,td{
-border:1px solid #ccc;
-padding:6px;
-}
-
-th{
-background:#eee;
-}
-
-img{
-max-width:60px;
-}
+body{font-family:Arial;background:#f5f5f5;padding:20px}
+.box{background:#fff;padding:15px;border:1px solid #ccc;border-radius:6px;margin-bottom:20px}
+button{padding:8px 12px;cursor:pointer}
+#x{position:absolute;background:#fff;border:1px solid #999;max-height:260px;overflow:auto;min-width:320px;padding:10px}
+.brandRow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brandRow input[type="number"]{width:60px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#eee}
+img{max-width:60px}
+#log{background:#000;color:#0f0;padding:10px;font-size:12px;height:120px;overflow:auto}
 </style>
 </head>
 
@@ -82,147 +35,22 @@ Worker URL
 
 <div class="brandRow">
 <label><input type="checkbox" data-max="10" value="Ableton|https://compel.com.tr/brand/1-ableton"> Ableton</label>
-<input type="number" min="1" value="10" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="8" value="Allen Heath|https://compel.com.tr/brand/48-allen-heath"> Allen Heath</label>
-<input type="number" min="1" value="8" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="64" value="Arturia|https://compel.com.tr/brand/4-arturia"> Arturia</label>
-<input type="number" min="1" value="64" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="4" value="Avalon|https://compel.com.tr/brand/6-avalon"> Avalon</label>
-<input type="number" min="1" value="4" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="16" value="Avid|https://compel.com.tr/brand/7-avid"> Avid</label>
-<input type="number" min="1" value="16" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="3" value="Compel|https://compel.com.tr/brand/49-compel"> Compel</label>
-<input type="number" min="1" value="3" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="9" value="Cranborne Audio|https://compel.com.tr/brand/41-cranborne-audio"> Cranborne Audio</label>
-<input type="number" min="1" value="9" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="6" value="Crane Song|https://compel.com.tr/brand/9-crane-song"> Crane Song</label>
-<input type="number" min="1" value="6" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="10" value="Denon DJ|https://compel.com.tr/brand/10-denon-dj"> Denon DJ</label>
-<input type="number" min="1" value="10" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="12" value="Fender Studio|https://compel.com.tr/brand/50-fender-studio"> Fender Studio</label>
-<input type="number" min="1" value="12" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="25" value="Genelec|https://compel.com.tr/brand/11-genelec"> Genelec</label>
-<input type="number" min="1" value="25" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="8" value="HeadRush|https://compel.com.tr/brand/12-headrush"> HeadRush</label>
-<input type="number" min="1" value="8" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="296" value="Hosa|https://compel.com.tr/brand/13-hosa"> Hosa</label>
-<input type="number" min="1" value="296" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="50" value="M-Audio|https://compel.com.tr/brand/16-m-audio"> M-Audio</label>
-<input type="number" min="1" value="50" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="2" value="M-Game|https://compel.com.tr/brand/44-m-game"> M-Game</label>
-<input type="number" min="1" value="2" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="9" value="Marantz Professional|https://compel.com.tr/brand/17-marantz-professional"> Marantz Professional</label>
-<input type="number" min="1" value="9" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="33" value="Numark|https://compel.com.tr/brand/20-numark"> Numark</label>
-<input type="number" min="1" value="33" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="97" value="PreSonus|https://compel.com.tr/brand/21-presonus"> PreSonus</label>
-<input type="number" min="1" value="97" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="10" value="Rane|https://compel.com.tr/brand/23-rane"> Rane</label>
-<input type="number" min="1" value="10" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="8" value="Rupert Neve Designs|https://compel.com.tr/brand/25-rupert-neve-designs"> Rupert Neve Designs</label>
-<input type="number" min="1" value="8" disabled>
+<input type="number" value="10" disabled>
 </div>
 
 <div class="brandRow">
 <label><input type="checkbox" data-max="246" value="Rode|https://compel.com.tr/brand/24-rode"> Rode</label>
-<input type="number" min="1" value="246" disabled>
+<input type="number" value="246" disabled>
 </div>
 
 <div class="brandRow">
-<label><input type="checkbox" data-max="3" value="Rode X|https://compel.com.tr/brand/45-rode-x"> Rode X</label>
-<input type="number" min="1" value="3" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="2" value="Sheeran Loopers|https://compel.com.tr/brand/47-sheeran-loopers"> Sheeran Loopers</label>
-<input type="number" min="1" value="2" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="6" value="Sibelius|https://compel.com.tr/brand/26-sibelius"> Sibelius</label>
-<input type="number" min="1" value="6" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="12" value="Sonarworks|https://compel.com.tr/brand/28-sonarworks"> Sonarworks</label>
-<input type="number" min="1" value="12" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="1" value="SoundSwitch|https://compel.com.tr/brand/43-soundswitch"> SoundSwitch</label>
-<input type="number" min="1" value="1" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="3" value="Stanton|https://compel.com.tr/brand/42-stanton"> Stanton</label>
-<input type="number" min="1" value="3" disabled>
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" data-max="72" value="Universal Audio|https://compel.com.tr/brand/36-universal-audio"> Universal Audio</label>
-<input type="number" min="1" value="72" disabled>
+<label><input type="checkbox" data-max="97" value="PreSonus|https://compel.com.tr/brand/21-presonus"> PreSonus</label>
+<input type="number" value="97" disabled>
 </div>
 
 <div class="brandRow">
 <label><input type="checkbox" data-max="79" value="Warm Audio|https://compel.com.tr/brand/38-warm-audio"> Warm Audio</label>
-<input type="number" min="1" value="79" disabled>
+<input type="number" value="79" disabled>
 </div>
 
 </div>
@@ -234,6 +62,13 @@ Worker URL
 
 </div>
 
+<div class="box">
+
+<b>Log</b>
+
+<div id="log"></div>
+
+</div>
 
 <div class="box">
 
@@ -262,6 +97,12 @@ Worker URL
 
 <script>
 
+function log(msg){
+let l=document.getElementById("log")
+l.innerHTML+=msg+"<br>"
+l.scrollTop=l.scrollHeight
+}
+
 document.querySelectorAll(".brandRow input[type=checkbox]").forEach(c=>{
 c.onchange=()=>{
 let n=c.parentNode.parentNode.querySelector("input[type=number]")
@@ -269,11 +110,13 @@ n.disabled=!c.checked
 }
 })
 
-
 async function listele(){
 
 let worker=document.getElementById("worker").value
 let rows=[]
+let brandCount=0
+
+log("Tarama başladı")
 
 for(let r of document.querySelectorAll(".brandRow")){
 
@@ -285,15 +128,53 @@ if(!c.checked)continue
 let [name,url]=c.value.split("|")
 let limit=n.value
 
+brandCount++
+
 let api=worker+"?u="+encodeURIComponent(url)+"&limit="+limit
 
-let j=await fetch(api).then(r=>r.json())
+log("İstek gönderildi → "+name)
+
+try{
+
+let res=await fetch(api)
+
+if(!res.ok){
+
+log("Worker hata verdi → "+name+" ("+res.status+")")
+continue
+
+}
+
+let j=await res.json()
+
+if(!j || !j.urunler){
+
+log("Veri yok → "+name)
+continue
+
+}
+
+log("Başarılı → "+name+" ("+j.urunler.length+" ürün)")
 
 rows.push(...j.urunler)
+
+}catch(err){
+
+log("Fetch hata → "+name+" : "+err.message)
+
+}
+
+}
+
+if(rows.length===0){
+
+log("Hiç veri gelmedi")
 
 }
 
 render(rows)
+
+log("Tarama tamamlandı")
 
 }
 
