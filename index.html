@@ -2,13 +2,13 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Compel Batch Tarayıcı</title>
+<title>Compel KV Tarayıcı</title>
 
 <style>
-body{font-family:Arial;background:#f4f4f4;padding:20px}
-.box{background:#fff;padding:15px;border:1px solid #ccc;border-radius:6px;margin-bottom:20px}
-button{padding:8px 12px;cursor:pointer}
-.brandRow{display:flex;gap:10px;margin-bottom:6px}
+body{font-family:Arial;background:#f5f5f5;padding:20px}
+.box{background:#fff;border:1px solid #ccc;border-radius:6px;padding:15px;margin-bottom:20px}
+button{padding:8px 14px;cursor:pointer}
+.brandRow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .brandRow input[type=number]{width:70px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{border:1px solid #ccc;padding:6px}
@@ -23,7 +23,7 @@ img{max-width:60px}
 <div class="box">
 
 Worker URL  
-<input id="worker" style="width:400px" value="https://13.tvkapora.workers.dev/">
+<input id="worker" style="width:420px" value="https://13.tvkapora.workers.dev/">
 
 <br><br>
 
@@ -33,13 +33,63 @@ Batch Boyutu
 <br><br>
 
 <div class="brandRow">
-<label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode"> Rode</label>
-<input type="number" value="246">
+<label><input type="checkbox" value="Ableton|https://compel.com.tr/brand/1-ableton"> Ableton</label>
+<input type="number" value="10">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Allen Heath|https://compel.com.tr/brand/48-allen-heath"> Allen Heath</label>
+<input type="number" value="8">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Arturia|https://compel.com.tr/brand/4-arturia"> Arturia</label>
+<input type="number" value="64">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Avid|https://compel.com.tr/brand/7-avid"> Avid</label>
+<input type="number" value="16">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Genelec|https://compel.com.tr/brand/11-genelec"> Genelec</label>
+<input type="number" value="25">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa"> Hosa</label>
+<input type="number" value="296">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="M-Audio|https://compel.com.tr/brand/16-m-audio"> M-Audio</label>
+<input type="number" value="50">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Numark|https://compel.com.tr/brand/20-numark"> Numark</label>
+<input type="number" value="33">
 </div>
 
 <div class="brandRow">
 <label><input type="checkbox" value="PreSonus|https://compel.com.tr/brand/21-presonus"> PreSonus</label>
 <input type="number" value="97">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Rane|https://compel.com.tr/brand/23-rane"> Rane</label>
+<input type="number" value="10">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode"> Rode</label>
+<input type="number" value="246">
+</div>
+
+<div class="brandRow">
+<label><input type="checkbox" value="Universal Audio|https://compel.com.tr/brand/36-universal-audio"> Universal Audio</label>
+<input type="number" value="72">
 </div>
 
 <div class="brandRow">
@@ -49,14 +99,14 @@ Batch Boyutu
 
 <br>
 
-<button onclick="start()">Batch Listele</button>
+<button onclick="start()">Listele</button>
 
 </div>
 
 
 <div class="box">
 
-<b>Tarama Log</b>
+<b>Log</b>
 
 <div id="log"></div>
 
@@ -75,6 +125,7 @@ Batch Boyutu
 <th>Ürün</th>
 <th>Varyant</th>
 <th>SKU</th>
+<th>EAN</th>
 <th>Fiyat</th>
 <th>Stok</th>
 </tr>
@@ -89,12 +140,10 @@ Batch Boyutu
 
 <script>
 
-function log(t){
-
+function log(txt){
 let l=document.getElementById("log")
-l.innerHTML+=t+"<br>"
+l.innerHTML+=txt+"<br>"
 l.scrollTop=l.scrollHeight
-
 }
 
 async function start(){
@@ -104,14 +153,14 @@ let batch=parseInt(document.getElementById("batch").value)
 
 let rows=[]
 
-log("Tarama başladı")
+log("Tarama başlatıldı")
 
 for(let r of document.querySelectorAll(".brandRow")){
 
 let c=r.querySelector("input[type=checkbox]")
 let n=r.querySelector("input[type=number]")
 
-if(!c.checked)continue
+if(!c.checked) continue
 
 let [name,url]=c.value.split("|")
 let total=parseInt(n.value)
@@ -137,10 +186,8 @@ try{
 let res=await fetch(api)
 
 if(!res.ok){
-
 log("Worker hata → "+res.status)
 break
-
 }
 
 let j=await res.json()
@@ -151,11 +198,11 @@ rows.push(...j.urunler)
 
 render(rows)
 
-log("Ürün geldi → "+j.urunler.length)
+log("Gelen ürün → "+j.urunler.length)
 
 }else{
 
-log("Veri yok")
+log("Veri gelmedi")
 
 }
 
@@ -167,7 +214,7 @@ log("Fetch hata → "+e.message)
 
 start+=limit
 
-await sleep(600)
+await sleep(700)
 
 }
 
@@ -182,7 +229,6 @@ log("<br>Tarama tamamlandı")
 function render(rows){
 
 let t=document.getElementById("t")
-
 t.innerHTML=""
 
 rows.forEach(r=>{
@@ -196,6 +242,7 @@ tr.innerHTML=`
 <td>${r.urun_adi||""}</td>
 <td>${r.varyant_adi||""}</td>
 <td>${r.sku||""}</td>
+<td>${r.ean||""}</td>
 <td>${r.guncel_fiyat||""}</td>
 <td>${r.stok||""}</td>
 `
