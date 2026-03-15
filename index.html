@@ -5,7 +5,6 @@
 <title>Compel KV Cache Loader</title>
 
 <style>
-
 body{
 font-family:Arial;
 background:#0f0f0f;
@@ -39,14 +38,6 @@ border:1px solid #333;
 font-family:monospace;
 white-space:pre-wrap;
 }
-
-.ok{color:#00ff9c}
-.kv{color:#58a6ff}
-.live{color:#ffaa00}
-.err{color:#ff5c5c}
-.idx{color:#aaa}
-.sep{color:#666}
-
 </style>
 </head>
 
@@ -60,11 +51,9 @@ white-space:pre-wrap;
 <div id="log"></div>
 
 <script>
-
 const worker="https://compeltest.tvkapora.workers.dev"
 
 const brands=[
-
 ["Ableton","https://compel.com.tr/brand/1-ableton"],
 ["Allen & Heath","https://compel.com.tr/brand/48-allen-heath"],
 ["Arturia","https://compel.com.tr/brand/4-arturia"],
@@ -94,116 +83,172 @@ const brands=[
 ["Stanton","https://compel.com.tr/brand/42-stanton"],
 ["Universal Audio","https://compel.com.tr/brand/36-universal-audio"],
 ["Warm Audio","https://compel.com.tr/brand/38-warm-audio"]
-
 ]
 
 const brandsDiv=document.getElementById("brands")
 const logDiv=document.getElementById("log")
 
 let scannedLinks=new Set()
+let audioCtx=null
 
-function log(html){
-logDiv.innerHTML+=html+"\n"
-logDiv.scrollTop=logDiv.scrollHeight
+function ensureAudio(){
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)()
+  }
+  if(audioCtx.state==="suspended"){
+    audioCtx.resume()
+  }
+}
+
+function playTone(freq,duration,type="sine",volume=0.08,delay=0){
+  ensureAudio()
+  const now=audioCtx.currentTime+delay
+  const osc=audioCtx.createOscillator()
+  const gain=audioCtx.createGain()
+
+  osc.type=type
+  osc.frequency.setValueAtTime(freq,now)
+
+  gain.gain.setValueAtTime(0.0001,now)
+  gain.gain.exponentialRampToValueAtTime(volume,now+0.01)
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+duration)
+
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+
+  osc.start(now)
+  osc.stop(now+duration+0.02)
+}
+
+function playLiveLiveSound(){
+  playTone(920,0.08,"sine",0.08,0)
+  playTone(1240,0.10,"sine",0.08,0.09)
+}
+
+function playLiveKvSound(){
+  playTone(620,0.12,"triangle",0.08,0)
+}
+
+function playGenericLogSound(){
+  playTone(880,0.06,"sine",0.05,0)
+}
+
+function playFinishSound(){
+  playTone(700,0.18,"sine",0.08,0)
+  playTone(900,0.22,"sine",0.08,0.18)
+  playTone(1200,0.45,"sine",0.08,0.40)
+}
+
+function playErrorSound(){
+  playTone(220,0.12,"sawtooth",0.06,0)
+  playTone(180,0.18,"sawtooth",0.06,0.10)
+}
+
+function log(text,soundType="generic"){
+  logDiv.textContent+=text+"\n"
+  logDiv.scrollTop=logDiv.scrollHeight
+
+  if(soundType==="live_live"){
+    playLiveLiveSound()
+  }else if(soundType==="live_kv"){
+    playLiveKvSound()
+  }else if(soundType==="finish"){
+    playFinishSound()
+  }else if(soundType==="error"){
+    playErrorSound()
+  }else{
+    playGenericLogSound()
+  }
 }
 
 function sleep(ms){
-return new Promise(r=>setTimeout(r,ms))
+  return new Promise(r=>setTimeout(r,ms))
 }
 
 function printProductData(obj){
-
-let out=""
-
-for(let k in obj){
-
-out+=k+" : "+obj[k]+"\n"
-
+  let out=""
+  for(let k in obj){
+    out+=k+" : "+obj[k]+"\n"
+  }
+  return out
 }
 
-return out
+function getSoundTypeBySources(u){
+  if(u && u.src_fiyat_stok==="live" && u.src_specs==="live") return "live_live"
+  if(u && u.src_fiyat_stok==="live" && u.src_specs==="kv") return "live_kv"
+  return "generic"
+}
 
+function getCacheStateText(u){
+  if(u.src_fiyat_stok==="live" && u.src_specs==="live") return "LIVE SCRAPE (fiyat/stok: live, specs: live)"
+  if(u.src_fiyat_stok==="live" && u.src_specs==="kv") return "MIXED CACHE (fiyat/stok: live, specs: kv)"
+  if(u.src_fiyat_stok==="kv" && u.src_specs==="kv") return "KV CACHE (fiyat/stok: kv, specs: kv)"
+  return "DİĞER (fiyat/stok: "+(u.src_fiyat_stok||"-")+", specs: "+(u.src_specs||"-")+")"
 }
 
 async function scanBrand(name,url){
+  ensureAudio()
 
-log("\n===== "+name+" TARANIYOR =====")
+  log("\n===== "+name+" TARANIYOR =====")
 
-let skip=0
+  let skip=0
 
-while(true){
+  while(true){
+    let api=worker+"?u="+encodeURIComponent(url)+"&skip="+skip+"&stop=1"
 
-let api=worker+"?u="+encodeURIComponent(url)+"&skip="+skip+"&stop=1"
+    log("\nindex="+skip)
 
-log("\nindex="+skip)
+    try{
+      let r=await fetch(api)
+      let j=await r.json()
 
-try{
+      if(!j.urunler || j.urunler.length===0){
+        log("✔ BİTTİ (ürün kalmadı)","finish")
+        break
+      }
 
-let r=await fetch(api)
-let j=await r.json()
+      let list=j.urunler
+      let productLink=list[0].urun_linki
 
-if(!j.urunler || j.urunler.length===0){
+      if(scannedLinks.has(productLink)){
+        log("✔ BİTTİ (aynı ürün tekrar geldi)","finish")
+        break
+      }
 
-log("✔ BİTTİ (ürün kalmadı)")
-break
+      scannedLinks.add(productLink)
 
-}
+      log("ürün linki: "+productLink)
+      log("varyant sayısı: "+list.length)
 
-let list=j.urunler
+      list.forEach((u,i)=>{
+        const soundType=getSoundTypeBySources(u)
+        const cacheState=getCacheStateText(u)
 
-let productLink=list[0].urun_linki
+        log("\n--- VARYANT "+(i+1)+" ---",soundType)
+        log("cache durumu: "+cacheState,soundType)
+        log(printProductData(u),soundType)
+      })
 
-if(scannedLinks.has(productLink)){
+    }catch(e){
+      log("HATA: "+e,"error")
+    }
 
-log("✔ BİTTİ (aynı ürün tekrar geldi)")
-break
-
-}
-
-scannedLinks.add(productLink)
-
-log("ürün linki: "+productLink)
-log("varyant sayısı: "+list.length)
-
-list.forEach((u,i)=>{
-
-let kvSpec=u.src_specs==="kv"
-let kvStock=u.src_fiyat_stok==="kv"
-
-let cacheState=(kvSpec && kvStock) ? "KV CACHE" : "LIVE SCRAPE"
-
-log("\n--- VARYANT "+(i+1)+" ---")
-log("cache durumu: "+cacheState)
-
-log(printProductData(u))
-
-})
-
-}catch(e){
-
-log("HATA: "+e)
-
-}
-
-skip++
-
-await sleep(1000)
-
-}
-
+    skip++
+    await sleep(1000)
+  }
 }
 
 brands.forEach(b=>{
+  let btn=document.createElement("button")
+  btn.innerText=b[0]
 
-let btn=document.createElement("button")
-btn.innerText=b[0]
+  btn.onclick=()=>{
+    ensureAudio()
+    scanBrand(b[0],b[1])
+  }
 
-btn.onclick=()=>scanBrand(b[0],b[1])
-
-brandsDiv.appendChild(btn)
-
+  brandsDiv.appendChild(btn)
 })
-
 </script>
 
 </body>
