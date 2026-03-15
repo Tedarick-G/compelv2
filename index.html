@@ -2,260 +2,207 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Compel KV Tarayıcı</title>
+<title>Compel KV Cache Loader</title>
 
 <style>
-body{font-family:Arial;background:#f5f5f5;padding:20px}
-.box{background:#fff;border:1px solid #ccc;border-radius:6px;padding:15px;margin-bottom:20px}
-button{padding:8px 14px;cursor:pointer}
-.brandRow{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.brandRow input[type=number]{width:70px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{border:1px solid #ccc;padding:6px}
-th{background:#eee}
-img{max-width:60px}
-#log{background:#000;color:#0f0;padding:10px;height:180px;overflow:auto;font-size:12px}
-</style>
 
+body{
+font-family:Arial;
+background:#0f0f0f;
+color:#eaeaea;
+padding:20px;
+}
+
+button{
+display:block;
+margin:4px 0;
+padding:10px;
+width:420px;
+cursor:pointer;
+background:#1e1e1e;
+border:1px solid #333;
+color:#fff;
+}
+
+button:hover{
+background:#333;
+}
+
+#log{
+margin-top:20px;
+background:#000;
+padding:15px;
+height:550px;
+overflow:auto;
+font-size:13px;
+border:1px solid #333;
+font-family:monospace;
+white-space:pre-wrap;
+}
+
+.ok{color:#00ff9c}
+.kv{color:#58a6ff}
+.live{color:#ffaa00}
+.err{color:#ff5c5c}
+.idx{color:#aaa}
+.sep{color:#666}
+
+</style>
 </head>
+
 <body>
 
-<div class="box">
+<h2>Compel KV Cache Tarayıcı</h2>
 
-Worker URL  
-<input id="worker" style="width:420px" value="https://13.tvkapora.workers.dev/">
+<div id="brands"></div>
 
-<br><br>
-
-Batch Boyutu  
-<input id="batch" type="number" value="10">
-
-<br><br>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Ableton|https://compel.com.tr/brand/1-ableton"> Ableton</label>
-<input type="number" value="10">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Allen Heath|https://compel.com.tr/brand/48-allen-heath"> Allen Heath</label>
-<input type="number" value="8">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Arturia|https://compel.com.tr/brand/4-arturia"> Arturia</label>
-<input type="number" value="64">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Avid|https://compel.com.tr/brand/7-avid"> Avid</label>
-<input type="number" value="16">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Genelec|https://compel.com.tr/brand/11-genelec"> Genelec</label>
-<input type="number" value="25">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Hosa|https://compel.com.tr/brand/13-hosa"> Hosa</label>
-<input type="number" value="296">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="M-Audio|https://compel.com.tr/brand/16-m-audio"> M-Audio</label>
-<input type="number" value="50">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Numark|https://compel.com.tr/brand/20-numark"> Numark</label>
-<input type="number" value="33">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="PreSonus|https://compel.com.tr/brand/21-presonus"> PreSonus</label>
-<input type="number" value="97">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Rane|https://compel.com.tr/brand/23-rane"> Rane</label>
-<input type="number" value="10">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Rode|https://compel.com.tr/brand/24-rode"> Rode</label>
-<input type="number" value="246">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Universal Audio|https://compel.com.tr/brand/36-universal-audio"> Universal Audio</label>
-<input type="number" value="72">
-</div>
-
-<div class="brandRow">
-<label><input type="checkbox" value="Warm Audio|https://compel.com.tr/brand/38-warm-audio"> Warm Audio</label>
-<input type="number" value="79">
-</div>
-
-<br>
-
-<button onclick="start()">Listele</button>
-
-</div>
-
-
-<div class="box">
-
-<b>Log</b>
-
+<h3>Log</h3>
 <div id="log"></div>
-
-</div>
-
-
-<div class="box">
-
-<table>
-
-<thead>
-<tr>
-<th>#</th>
-<th>Görsel</th>
-<th>Marka</th>
-<th>Ürün</th>
-<th>Varyant</th>
-<th>SKU</th>
-<th>EAN</th>
-<th>Fiyat</th>
-<th>Stok</th>
-</tr>
-</thead>
-
-<tbody id="t"></tbody>
-
-</table>
-
-</div>
-
 
 <script>
 
-function log(txt){
-let l=document.getElementById("log")
-l.innerHTML+=txt+"<br>"
-l.scrollTop=l.scrollHeight
-}
+const worker="https://compeltest.tvkapora.workers.dev"
 
-async function start(){
+const brands=[
 
-let worker=document.getElementById("worker").value
-let batch=parseInt(document.getElementById("batch").value)
+["Ableton","https://compel.com.tr/brand/1-ableton"],
+["Allen & Heath","https://compel.com.tr/brand/48-allen-heath"],
+["Arturia","https://compel.com.tr/brand/4-arturia"],
+["Avalon","https://compel.com.tr/brand/6-avalon"],
+["Avid","https://compel.com.tr/brand/7-avid"],
+["Compel","https://compel.com.tr/brand/49-compel"],
+["Cranborne Audio","https://compel.com.tr/brand/41-cranborne-audio"],
+["Crane Song","https://compel.com.tr/brand/9-crane-song"],
+["Denon DJ","https://compel.com.tr/brand/10-denon-dj"],
+["Fender Studio","https://compel.com.tr/brand/50-fender-studio"],
+["Genelec","https://compel.com.tr/brand/11-genelec"],
+["HeadRush","https://compel.com.tr/brand/12-headrush"],
+["Hosa","https://compel.com.tr/brand/13-hosa"],
+["M-Audio","https://compel.com.tr/brand/16-m-audio"],
+["M-Game","https://compel.com.tr/brand/44-m-game"],
+["Marantz Professional","https://compel.com.tr/brand/17-marantz-professional"],
+["Numark","https://compel.com.tr/brand/20-numark"],
+["PreSonus","https://compel.com.tr/brand/21-presonus"],
+["Rane","https://compel.com.tr/brand/23-rane"],
+["Rupert Neve Designs","https://compel.com.tr/brand/25-rupert-neve-designs"],
+["RØDE","https://compel.com.tr/brand/24-rode"],
+["RØDE X","https://compel.com.tr/brand/45-rode-x"],
+["Sheeran Loopers","https://compel.com.tr/brand/47-sheeran-loopers"],
+["Sibelius","https://compel.com.tr/brand/26-sibelius"],
+["Sonarworks","https://compel.com.tr/brand/28-sonarworks"],
+["SoundSwitch","https://compel.com.tr/brand/43-soundswitch"],
+["Stanton","https://compel.com.tr/brand/42-stanton"],
+["Universal Audio","https://compel.com.tr/brand/36-universal-audio"],
+["Warm Audio","https://compel.com.tr/brand/38-warm-audio"]
 
-let rows=[]
+]
 
-log("Tarama başlatıldı")
+const brandsDiv=document.getElementById("brands")
+const logDiv=document.getElementById("log")
 
-for(let r of document.querySelectorAll(".brandRow")){
+let scannedLinks=new Set()
 
-let c=r.querySelector("input[type=checkbox]")
-let n=r.querySelector("input[type=number]")
-
-if(!c.checked) continue
-
-let [name,url]=c.value.split("|")
-let total=parseInt(n.value)
-
-log("<br>MARKA → "+name)
-log("Toplam ürün → "+total)
-
-let start=0
-
-while(start<total){
-
-let limit=batch
-
-if(start+limit>total)
-limit=total-start
-
-let api=worker+"?u="+encodeURIComponent(url)+"&limit="+limit
-
-log("Batch → "+start+" - "+(start+limit))
-
-try{
-
-let res=await fetch(api)
-
-if(!res.ok){
-log("Worker hata → "+res.status)
-break
-}
-
-let j=await res.json()
-
-if(j.urunler){
-
-rows.push(...j.urunler)
-
-render(rows)
-
-log("Gelen ürün → "+j.urunler.length)
-
-}else{
-
-log("Veri gelmedi")
-
-}
-
-}catch(e){
-
-log("Fetch hata → "+e.message)
-
-}
-
-start+=limit
-
-await sleep(700)
-
-}
-
-log("Marka tamamlandı → "+name)
-
-}
-
-log("<br>Tarama tamamlandı")
-
-}
-
-function render(rows){
-
-let t=document.getElementById("t")
-t.innerHTML=""
-
-rows.forEach(r=>{
-
-let tr=document.createElement("tr")
-
-tr.innerHTML=`
-<td>${r.sira_no||""}</td>
-<td><img src="${r.kapak_gorsel||""}"></td>
-<td>${r.marka_adi||""}</td>
-<td>${r.urun_adi||""}</td>
-<td>${r.varyant_adi||""}</td>
-<td>${r.sku||""}</td>
-<td>${r.ean||""}</td>
-<td>${r.guncel_fiyat||""}</td>
-<td>${r.stok||""}</td>
-`
-
-t.appendChild(tr)
-
-})
-
+function log(html){
+logDiv.innerHTML+=html+"\n"
+logDiv.scrollTop=logDiv.scrollHeight
 }
 
 function sleep(ms){
 return new Promise(r=>setTimeout(r,ms))
 }
+
+function printProductData(obj){
+
+let out=""
+
+for(let k in obj){
+
+out+=k+" : "+obj[k]+"\n"
+
+}
+
+return out
+
+}
+
+async function scanBrand(name,url){
+
+log("\n===== "+name+" TARANIYOR =====")
+
+let skip=0
+
+while(true){
+
+let api=worker+"?u="+encodeURIComponent(url)+"&skip="+skip+"&stop=1"
+
+log("\nindex="+skip)
+
+try{
+
+let r=await fetch(api)
+let j=await r.json()
+
+if(!j.urunler || j.urunler.length===0){
+
+log("✔ BİTTİ (ürün kalmadı)")
+break
+
+}
+
+let list=j.urunler
+
+let productLink=list[0].urun_linki
+
+if(scannedLinks.has(productLink)){
+
+log("✔ BİTTİ (aynı ürün tekrar geldi)")
+break
+
+}
+
+scannedLinks.add(productLink)
+
+log("ürün linki: "+productLink)
+log("varyant sayısı: "+list.length)
+
+list.forEach((u,i)=>{
+
+let kvSpec=u.src_specs==="kv"
+let kvStock=u.src_fiyat_stok==="kv"
+
+let cacheState=(kvSpec && kvStock) ? "KV CACHE" : "LIVE SCRAPE"
+
+log("\n--- VARYANT "+(i+1)+" ---")
+log("cache durumu: "+cacheState)
+
+log(printProductData(u))
+
+})
+
+}catch(e){
+
+log("HATA: "+e)
+
+}
+
+skip++
+
+await sleep(1000)
+
+}
+
+}
+
+brands.forEach(b=>{
+
+let btn=document.createElement("button")
+btn.innerText=b[0]
+
+btn.onclick=()=>scanBrand(b[0],b[1])
+
+brandsDiv.appendChild(btn)
+
+})
 
 </script>
 
