@@ -1,0 +1,45 @@
+{
+  "brand": "compel",
+  "guncelleme": "2026-03-26T21:51:41.095Z",
+  "urunler": [
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1832-compel-compel-venom-canta-a.html",
+      "kapak_gorsel": "https://compel.com.tr/9329-large_default/compel-venom-canta-a.jpg",
+      "urun_adi": "Compel Venom Çanta Tip A",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Compel",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "9.958,51 ₺",
+      "usd_kdv_haric": "183,51 $",
+      "eur_kdv_haric": "158,61 €",
+      "stok": 7
+    },
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1833-compel-compel-venom-canta-a.html",
+      "kapak_gorsel": "https://compel.com.tr/9338-large_default/compel-venom-canta-a.jpg",
+      "urun_adi": "Compel Venom Çanta Tip B",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Compel",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "9.965,91 ₺",
+      "usd_kdv_haric": "183,65 $",
+      "eur_kdv_haric": "158,73 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1845-compel-compel-venom-canta-a.html",
+      "kapak_gorsel": "https://compel.com.tr/9491-large_default/compel-venom-canta-a.jpg",
+      "urun_adi": "Compel Venom Çanta Tip C",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Compel",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "5.222,35 ₺",
+      "usd_kdv_haric": "96,23 $",
+      "eur_kdv_haric": "83,18 €",
+      "stok": 0
+    }
+  ]
+}
