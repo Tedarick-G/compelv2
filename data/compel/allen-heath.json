@@ -1,0 +1,110 @@
+{
+  "brand": "allen-heath",
+  "guncelleme": "2026-03-26T21:54:57.002Z",
+  "urunler": [
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1823-allen-heath-xone-43-6938122241572.html",
+      "kapak_gorsel": "https://compel.com.tr/9220-large_default/xone-43.jpg",
+      "urun_adi": "Xone 43",
+      "sku": "7840",
+      "ean": "6938122241572",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "41.170,68 ₺",
+      "usd_kdv_haric": "759,05 $",
+      "eur_kdv_haric": "654,65 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1822-allen-heath-xone-px5-6938122245242.html",
+      "kapak_gorsel": "https://compel.com.tr/9207-large_default/xone-px5.jpg",
+      "urun_adi": "Xone PX5",
+      "sku": "7843",
+      "ean": "6938122245242",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "79.461,22 ₺",
+      "usd_kdv_haric": "1.465,00 $",
+      "eur_kdv_haric": "1.263,50 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1945-allen-heath-xone24-5056756901356.html",
+      "kapak_gorsel": "https://compel.com.tr/10988-large_default/xone24.jpg",
+      "urun_adi": "Xone:24",
+      "sku": "8018",
+      "ean": "5056756901356",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "23.323,09 ₺",
+      "usd_kdv_haric": "430,00 $",
+      "eur_kdv_haric": "370,86 €",
+      "stok": 12
+    },
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1944-allen-heath-xone24c-5056756901424.html",
+      "kapak_gorsel": "https://compel.com.tr/10975-large_default/xone24c.jpg",
+      "urun_adi": "Xone:24C",
+      "sku": "8029",
+      "ean": "5056756901424",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "27.309,71 ₺",
+      "usd_kdv_haric": "503,50 $",
+      "eur_kdv_haric": "434,25 €",
+      "stok": 3
+    },
+    {
+      "urun_linki": "https://compel.com.tr/dj-urunleri/1821-allen-heath-xone92-6938122253841.html",
+      "kapak_gorsel": "https://compel.com.tr/9502-large_default/xone92.jpg",
+      "urun_adi": "Xone:92 MK2",
+      "sku": "7841",
+      "ean": "6938122253841",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "DJ Ürünleri",
+      "guncel_fiyat": "84.969,26 ₺",
+      "usd_kdv_haric": "1.566,55 $",
+      "eur_kdv_haric": "1.351,08 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/mikserler/1819-allen-heath-xone-96-6938122248014.html",
+      "kapak_gorsel": "https://compel.com.tr/9134-large_default/xone-96.jpg",
+      "urun_adi": "Xone:96",
+      "sku": "7852",
+      "ean": "6938122248014",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "Mikserler",
+      "guncel_fiyat": "114.391,61 ₺",
+      "usd_kdv_haric": "2.109,00 $",
+      "eur_kdv_haric": "1.818,92 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/kontrol-arabirimleri/1828-allen-heath-xone-k2-6938122237339.html",
+      "kapak_gorsel": "https://compel.com.tr/9272-large_default/xone-k2.jpg",
+      "urun_adi": "Xone:K2",
+      "sku": "7842",
+      "ean": "6938122237339",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "Kontrol Arabirimleri",
+      "guncel_fiyat": "16.961,07 ₺",
+      "usd_kdv_haric": "312,55 $",
+      "eur_kdv_haric": "270,15 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/kontrol-arabirimleri/1938-allen-heath-xonek3-5056756901936.html",
+      "kapak_gorsel": "https://compel.com.tr/10895-large_default/xonek3.jpg",
+      "urun_adi": "Xone:K3",
+      "sku": "8017",
+      "ean": "5056756901936",
+      "marka_adi": "Allen & Heath",
+      "kategori_adi": "Kontrol Arabirimleri",
+      "guncel_fiyat": "12.630,58 ₺",
+      "usd_kdv_haric": "232,75 $",
+      "eur_kdv_haric": "201,17 €",
+      "stok": 10
+    }
+  ]
+}
