@@ -1,0 +1,32 @@
+{
+  "brand": "m-game",
+  "guncelleme": "2026-03-26T22:33:01.447Z",
+  "urunler": [
+    {
+      "urun_linki": "https://compel.com.tr/oyuncu-urunleri/1208-m-game-rgb-dual-0694318023853.html",
+      "kapak_gorsel": "https://compel.com.tr/3911-large_default/rgb-dual.jpg",
+      "urun_adi": "M-Game RGB Dual",
+      "sku": "7078",
+      "ean": "0694318023853",
+      "marka_adi": "M-Game",
+      "kategori_adi": "Oyuncu Ürünleri",
+      "guncel_fiyat": "2.811,02 ₺",
+      "usd_kdv_haric": "51,80 $",
+      "eur_kdv_haric": "44,77 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/oyuncu-urunleri/1209-m-game-solo-0694318025277.html",
+      "kapak_gorsel": "https://compel.com.tr/3915-large_default/solo.jpg",
+      "urun_adi": "M-Game Solo",
+      "sku": "7079",
+      "ean": "0694318025277",
+      "marka_adi": "M-Game",
+      "kategori_adi": "Oyuncu Ürünleri",
+      "guncel_fiyat": "1.725,68 ₺",
+      "usd_kdv_haric": "31,80 $",
+      "eur_kdv_haric": "27,49 €",
+      "stok": 0
+    }
+  ]
+}
