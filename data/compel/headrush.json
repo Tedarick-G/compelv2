@@ -1,0 +1,110 @@
+{
+  "brand": "headrush",
+  "guncelleme": "2026-03-26T22:30:43.868Z",
+  "urunler": [
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1907-headrush-vx5-0694318026588.html",
+      "kapak_gorsel": "https://compel.com.tr/10347-large_default/vx5.jpg",
+      "urun_adi": "VX5",
+      "sku": "7987",
+      "ean": "0694318026588",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "17.365,36 ₺",
+      "usd_kdv_haric": "320,00 $",
+      "eur_kdv_haric": "276,59 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/hoparlorler/1799-headrush-frfr-go-0694318026489.html",
+      "kapak_gorsel": "https://compel.com.tr/8936-large_default/frfr-go.jpg",
+      "urun_adi": "FRFR-GO",
+      "sku": "7807",
+      "ean": "0694318026489",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Hoparlörler",
+      "guncel_fiyat": "10.961,88 ₺",
+      "usd_kdv_haric": "202,00 $",
+      "eur_kdv_haric": "174,60 €",
+      "stok": 8
+    },
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1798-headrush-flex-prime-0694318026403.html",
+      "kapak_gorsel": "https://compel.com.tr/8930-large_default/flex-prime.jpg",
+      "urun_adi": "Flex Prime",
+      "sku": "7806",
+      "ean": "0694318026403",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "28.924,16 ₺",
+      "usd_kdv_haric": "533,00 $",
+      "eur_kdv_haric": "460,69 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/hoparlorler/1649-headrush-frfr-112-mkii-0694318026182.html",
+      "kapak_gorsel": "https://compel.com.tr/7093-large_default/frfr-112-mkii.jpg",
+      "urun_adi": "FRFR-112 MKII",
+      "sku": "7541",
+      "ean": "0694318026182",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Hoparlörler",
+      "guncel_fiyat": "27.350,42 ₺",
+      "usd_kdv_haric": "504,00 $",
+      "eur_kdv_haric": "435,62 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/hoparlorler/1648-headrush-frfr-108-mkii-0694318026199.html",
+      "kapak_gorsel": "https://compel.com.tr/7103-large_default/frfr-108-mkii.jpg",
+      "urun_adi": "FRFR-108 MKII",
+      "sku": "7535",
+      "ean": "0694318026199",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Hoparlörler",
+      "guncel_fiyat": "20.567,09 ₺",
+      "usd_kdv_haric": "379,00 $",
+      "eur_kdv_haric": "327,58 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1453-headrush-core-0694318024669.html",
+      "kapak_gorsel": "https://compel.com.tr/5579-large_default/core.jpg",
+      "urun_adi": "Core",
+      "sku": "7454",
+      "ean": "0694318024669",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "43.359,11 ₺",
+      "usd_kdv_haric": "799,00 $",
+      "eur_kdv_haric": "690,60 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1398-headrush-prime-0694318025789.html",
+      "kapak_gorsel": "https://compel.com.tr/4956-large_default/prime.jpg",
+      "urun_adi": "Prime",
+      "sku": "7260",
+      "ean": "0694318025789",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "57.848,33 ₺",
+      "usd_kdv_haric": "1.066,00 $",
+      "eur_kdv_haric": "921,38 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1116-headrush-headrush-expression-pedal-0694318024652.html",
+      "kapak_gorsel": "https://compel.com.tr/3163-large_default/headrush-expression-pedal.jpg",
+      "urun_adi": "HeadRush® Expression Pedal",
+      "sku": "6968",
+      "ean": "0694318024652",
+      "marka_adi": "HeadRush",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "7.000,40 ₺",
+      "usd_kdv_haric": "129,00 $",
+      "eur_kdv_haric": "111,50 €",
+      "stok": 0
+    }
+  ]
+}
