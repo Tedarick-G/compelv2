@@ -1,0 +1,84 @@
+{
+  "brand": "sibelius",
+  "guncelleme": "2026-03-26T22:28:25.973Z",
+  "urunler": [
+    {
+      "urun_linki": "https://compel.com.tr/yazilim-ve-plug-in-ler/1017-sibelius-sibelius-1-yillik-yenileme.html",
+      "kapak_gorsel": "https://compel.com.tr/2519-large_default/sibelius-1-yillik-yenileme.jpg",
+      "urun_adi": "Sibelius - 1 Yıllık (Yenileme)",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Sibelius",
+      "kategori_adi": "Yazılım ve Plug-in'ler",
+      "guncel_fiyat": "2.618,04 ₺",
+      "usd_kdv_haric": "48,24 $",
+      "eur_kdv_haric": "41,70 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/yazilim-ve-plug-in-ler/1016-sibelius-sibelius-1-yillik.html",
+      "kapak_gorsel": "https://compel.com.tr/2516-large_default/sibelius-1-yillik.jpg",
+      "urun_adi": "Sibelius - 1 Yıllık",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Sibelius",
+      "kategori_adi": "Yazılım ve Plug-in'ler",
+      "guncel_fiyat": "5.238,70 ₺",
+      "usd_kdv_haric": "96,54 $",
+      "eur_kdv_haric": "83,44 €",
+      "stok": -1
+    },
+    {
+      "urun_linki": "https://compel.com.tr/yazilim-ve-plug-in-ler/1014-sibelius-sibelius-ultimate-1-yillik.html",
+      "kapak_gorsel": "https://compel.com.tr/2510-large_default/sibelius-ultimate-1-yillik.jpg",
+      "urun_adi": "Sibelius Ultimate - 1 Yıllık",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Sibelius",
+      "kategori_adi": "Yazılım ve Plug-in'ler",
+      "guncel_fiyat": "10.482,64 ₺",
+      "usd_kdv_haric": "193,17 $",
+      "eur_kdv_haric": "166,96 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/yazilim-ve-plug-in-ler/1013-sibelius-sibelius-ultimate-3-yillik-yenileme.html",
+      "kapak_gorsel": "https://compel.com.tr/2507-large_default/sibelius-ultimate-3-yillik-yenileme.jpg",
+      "urun_adi": "Sibelius Ultimate - 3 Yıllık (Yenileme)",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Sibelius",
+      "kategori_adi": "Yazılım ve Plug-in'ler",
+      "guncel_fiyat": "10.437,98 ₺",
+      "usd_kdv_haric": "192,35 $",
+      "eur_kdv_haric": "166,25 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/yazilim-ve-plug-in-ler/1012-sibelius-sibelius-ultimate-1-yillik-yenileme.html",
+      "kapak_gorsel": "https://compel.com.tr/2504-large_default/sibelius-ultimate-1-yillik-yenileme.jpg",
+      "urun_adi": "Sibelius Ultimate - 1 Yıllık (Yenileme)",
+      "sku": null,
+      "ean": null,
+      "marka_adi": "Sibelius",
+      "kategori_adi": "Yazılım ve Plug-in'ler",
+      "guncel_fiyat": "5.241,32 ₺",
+      "usd_kdv_haric": "96,58 $",
+      "eur_kdv_haric": "83,48 €",
+      "stok": 0
+    },
+    {
+      "urun_linki": "https://compel.com.tr/yazilim-ve-plug-in-ler/954-sibelius-ultimate-2019.html",
+      "kapak_gorsel": "https://compel.com.tr/2379-large_default/ultimate-2019.jpg",
+      "urun_adi": "Sibelius Ultimate",
+      "sku": "5895",
+      "ean": null,
+      "marka_adi": "Sibelius",
+      "kategori_adi": "Yazılım ve Plug-in'ler",
+      "guncel_fiyat": "19.905,03 ₺",
+      "usd_kdv_haric": "366,80 $",
+      "eur_kdv_haric": "317,04 €",
+      "stok": 0
+    }
+  ]
+}

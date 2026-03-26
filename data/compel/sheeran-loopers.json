@@ -1,0 +1,32 @@
+{
+  "brand": "sheeran-loopers",
+  "guncelleme": "2026-03-26T22:28:46.402Z",
+  "urunler": [
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1666-sheeran-loopers-looper-plus-0694318025888.html",
+      "kapak_gorsel": "https://compel.com.tr/7322-large_default/looper-plus.jpg",
+      "urun_adi": "Looper +",
+      "sku": "7546",
+      "ean": "0694318025888",
+      "marka_adi": "Sheeran Loopers",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "14.717,14 ₺",
+      "usd_kdv_haric": "271,20 $",
+      "eur_kdv_haric": "234,41 €",
+      "stok": -1
+    },
+    {
+      "urun_linki": "https://compel.com.tr/gitar-prosesorleri-pedallar/1800-sheeran-loopers-looper-x-0694318025871.html",
+      "kapak_gorsel": "https://compel.com.tr/8949-large_default/looper-x.jpg",
+      "urun_adi": "Looper X",
+      "sku": "7730",
+      "ean": "0694318025871",
+      "marka_adi": "Sheeran Loopers",
+      "kategori_adi": "Gitar Prosesörleri/Pedallar",
+      "guncel_fiyat": "73.043,00 ₺",
+      "usd_kdv_haric": "1.346,00 $",
+      "eur_kdv_haric": "1.163,39 €",
+      "stok": 5
+    }
+  ]
+}
