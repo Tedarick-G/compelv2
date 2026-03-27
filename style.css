@@ -41,6 +41,8 @@ tr:hover td{background:#f4f4f2}
 .out{color:#ccc}
 .variant{color:var(--muted);font-size:11px}
 .urun-adi{cursor:pointer;max-width:220px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
-.updating .price{opacity:.3;transition:opacity .2s}
+.updating .price{background:#fffbe6;transition:background 0.3s}
+@keyframes flash{0%{background:#d4edda}100%{background:transparent}}
+.flashed{animation:flash 1.2s ease-out}
 .new-badge{display:inline-block;padding:1px 6px;background:#111;color:#fff;font-size:10px;margin-left:6px}
 .hidden{display:none!important}
