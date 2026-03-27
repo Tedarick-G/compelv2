@@ -10,16 +10,13 @@ const BRANDS = [
 
 let activeBrand = null, brandData = {};
 const $ = id => document.getElementById(id);
-const brandList = $('brand-list'), productSection = $('product-section'),
-  brandsSection = $('brands-section'), tbody = $('tbody'),
-  notice = $('notice'), statusEl = $('status'), jsonDate = $('json-date');
+const brandList=$('brand-list'), productSection=$('product-section'),
+  brandsSection=$('brands-section'), tbody=$('tbody'),
+  notice=$('notice'), statusEl=$('status'), jsonDate=$('json-date');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = ms => ms + Math.floor(Math.random() * JITTER);
-
-function setStatus(msg) {
-  statusEl.textContent = msg;
-}
+const setStatus = msg => { statusEl.textContent = msg; };
 
 function renderBrands() {
   brandList.innerHTML = '';
@@ -77,29 +74,43 @@ function setDate(iso) {
   jsonDate.textContent = iso ? iso.slice(0,16).replace('T',' ') : '';
 }
 
-// --- İlk çekim: skip=0,1,2,... ile tek tek ---
+// Sayfa sayfa link topla
+async function collectLinks(brand) {
+  const seen = new Set(), all = [];
+  let page = 1;
+  while(true) {
+    setStatus(`sayfa ${page} taranıyor...`);
+    try {
+      const res = await workerGet({ u: brand, page, fields: 'urun_linki' });
+      const links = (res.urunler||[]).map(u=>u.urun_linki).filter(Boolean);
+      if (!links.length) break;
+      let added = 0;
+      links.forEach(l => { if(!seen.has(l)){ seen.add(l); all.push(l); added++; } });
+      if (!added) break;
+      page++;
+      await sleep(rand(DELAY));
+    } catch(e) { setStatus(`sayfa hatası: ${e.message}`); break; }
+  }
+  return all;
+}
+
+// --- İlk çekim ---
 async function initBrandData(brand) {
   const fields = 'urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
   tbody.innerHTML = '';
-  const urunler = [];
-  let skip = 0;
 
-  while(true) {
-    setStatus(`${brand}: ${skip+1}. ürün çekiliyor...`);
+  const allLinks = await collectLinks(brand);
+  setStatus(`${allLinks.length} link bulundu, ürünler çekiliyor...`);
+
+  const urunler = [];
+  for (let i = 0; i < allLinks.length; i++) {
+    setStatus(`${i+1}/${allLinks.length} — çekiliyor`);
     try {
-      const res = await workerGet({ u: brand, skip, stop: 1, fields });
-      const rows = (res.urunler||[]).filter(r => r && !r.hata);
-      if (!rows.length) break;
-      rows.forEach(r => { urunler.push(r); appendRow(r, urunler.length-1); });
-      // Worker'ın toplam sayısını biliyorsak kontrol et
-      if (res.toplam_bulunan_urun_linki && skip+1 >= res.toplam_bulunan_urun_linki) break;
-      skip++;
-    } catch(e) {
-      setStatus(`Hata: ${e.message} — devam ediliyor...`);
-      skip++;
-      if (skip > 600) break;
-    }
-    await sleep(rand(DELAY));
+      const res = await workerGet({ u: allLinks[i], fields });
+      const rows = Array.isArray(res) ? res : [res];
+      rows.forEach(r => { if(r&&!r.hata){ urunler.push(r); appendRow(r, urunler.length-1); } });
+    } catch(e) { console.warn(allLinks[i], e.message); }
+    if (i < allLinks.length-1) await sleep(rand(DELAY));
   }
 
   const json = { brand, guncelleme: new Date().toISOString(), urunler };
@@ -115,27 +126,15 @@ function downloadJson(data, filename) {
   a.download = filename; a.click();
 }
 
-// --- Güncelle: sadece fiyat/stok ---
+// --- Güncelle ---
 async function refreshBrand(brand, data) {
   const urunler = data.urunler || [];
   const fields = 'urun_linki,sku,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok,varyant_adi';
 
-  // Yeni ürün kontrolü
-  setStatus('Yeni ürün kontrolü...');
-  let liveLinks = [], skip = 0;
-  while(true) {
-    try {
-      const res = await workerGet({ u: brand, skip, stop: 1, fields: 'urun_linki' });
-      const links = (res.urunler||[]).map(u=>u.urun_linki).filter(Boolean);
-      if (!links.length) break;
-      liveLinks.push(...links);
-      if (res.toplam_bulunan_urun_linki && liveLinks.length >= res.toplam_bulunan_urun_linki) break;
-      skip++;
-    } catch { break; }
-    await sleep(rand(DELAY));
-  }
+  setStatus('yeni ürün kontrolü...');
+  const liveLinks = await collectLinks(brand);
   const linkSet = new Set(urunler.map(u=>u.urun_linki));
-  const newLinks = [...new Set(liveLinks)].filter(l=>!linkSet.has(l));
+  const newLinks = liveLinks.filter(l=>!linkSet.has(l));
 
   const domRows = [...tbody.querySelectorAll('tr[data-link]')];
   for (let i = 0; i < urunler.length; i++) {
@@ -148,14 +147,14 @@ async function refreshBrand(brand, data) {
       const res = await workerGet({ u: u.urun_linki, fields });
       const rs = Array.isArray(res)?res:[res];
       const match = u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0];
-      if (match && !match.hata) {
+      if (match&&!match.hata) {
         u.guncel_fiyat=match.guncel_fiyat; u.usd_kdv_haric=match.usd_kdv_haric;
         u.eur_kdv_haric=match.eur_kdv_haric; u.stok=match.stok;
         if (tr) {
           const out=(u.stok===0||u.stok===null)?'out':'';
           const cells=tr.querySelectorAll('.price');
           [u.stok??'-',u.guncel_fiyat||'-',u.usd_kdv_haric||'-',u.eur_kdv_haric||'-']
-            .forEach((v,j)=>{cells[j].textContent=v; cells[j].className=`price ${out}`;});
+            .forEach((v,j)=>{ cells[j].textContent=v; cells[j].className=`price ${out}`; });
           tr.classList.remove('updating');
         }
       }
@@ -166,7 +165,7 @@ async function refreshBrand(brand, data) {
   const json = { ...data, urunler, guncelleme: new Date().toISOString() };
   setDate(json.guncelleme);
   if (newLinks.length) showNotice(brand, newLinks, json);
-  else { downloadJson(json, `${brand}.json`); setStatus(`Güncellendi.`); }
+  else { downloadJson(json, `${brand}.json`); setStatus('güncellendi.'); }
   brandData[brand] = json;
 }
 
@@ -188,7 +187,7 @@ function showNotice(brand, newLinks, json) {
     json.guncelleme = new Date().toISOString();
     setDate(json.guncelleme); brandData[brand]=json;
     downloadJson(json, `${brand}.json`);
-    setStatus(`Yeni ürünler eklendi.`);
+    setStatus('yeni ürünler eklendi.');
   };
 }
 
@@ -209,7 +208,7 @@ async function openBrand(brand) {
   const data = await fetch(`data/compel/${brand}.json?_=${Date.now()}`).then(r=>r.ok?r.json():null).catch(()=>null);
   if (!data) {
     $('btn-init').classList.remove('hidden');
-    setStatus(`json yok — "ilk çekim" yapın`);
+    setStatus('json yok — "ilk çekim" yapın');
     brandData[brand] = null;
   } else {
     $('btn-init').classList.add('hidden'); brandData[brand]=data;
@@ -223,7 +222,7 @@ $('btn-back').onclick = () => {
   activeBrand=null; notice.classList.add('hidden'); setStatus('');
 };
 $('btn-refresh').onclick = async () => {
-  if (!activeBrand||!brandData[activeBrand]) { setStatus('Önce ilk çekimi yapın.'); return; }
+  if (!activeBrand||!brandData[activeBrand]) { setStatus('önce ilk çekimi yapın.'); return; }
   await refreshBrand(activeBrand, JSON.parse(JSON.stringify(brandData[activeBrand])));
 };
 $('btn-export').onclick = () => {
