@@ -22,7 +22,6 @@ function setStatus(msg, dur=3000) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = ms => ms + Math.floor(Math.random() * JITTER);
 
-// --- Markalar ---
 function renderBrands() {
   brandList.innerHTML = '';
   BRANDS.forEach(slug => {
@@ -33,7 +32,6 @@ function renderBrands() {
   });
 }
 
-// --- Worker ---
 async function workerGet(params) {
   const u = new URL(WORKER);
   Object.entries(params).forEach(([k,v]) => u.searchParams.set(k,v));
@@ -42,11 +40,11 @@ async function workerGet(params) {
   return r.json();
 }
 
-// --- Satır ---
 function makeRow(u, i) {
-  const out = (u.stok === 0 || u.stok === null) ? 'out' : '';
+  const out = (u.stok===0||u.stok===null) ? 'out' : '';
   const tr = document.createElement('tr');
   tr.dataset.link = u.urun_linki;
+  if (u.sku) tr.dataset.sku = u.sku;
   tr.innerHTML = `
     <td>${i+1}</td>
     <td>${u.kapak_gorsel?`<img class="thumb" src="${u.kapak_gorsel}" loading="lazy">`:'<div class="no-img"></div>'}</td>
@@ -59,12 +57,11 @@ function makeRow(u, i) {
     <td class="price ${out}">${u.usd_kdv_haric||'-'}</td>
     <td class="price ${out}">${u.eur_kdv_haric||'-'}</td>
     <td>${u.ean||'-'}</td>`;
-
-  const linkRow = document.createElement('tr');
-  linkRow.className = 'link-row hidden';
-  linkRow.innerHTML = `<td colspan="11"><a href="${u.urun_linki}" target="_blank">${u.urun_linki}</a></td>`;
-  tr.querySelector('.urun-adi').onclick = () => linkRow.classList.toggle('hidden');
-  return [tr, linkRow];
+  const lr = document.createElement('tr');
+  lr.className = 'link-row hidden';
+  lr.innerHTML = `<td colspan="11"><a href="${u.urun_linki}" target="_blank">${u.urun_linki}</a></td>`;
+  tr.querySelector('.urun-adi').onclick = () => lr.classList.toggle('hidden');
+  return [tr, lr];
 }
 
 function appendRow(u, i) {
@@ -77,37 +74,44 @@ function renderTable(urunler) {
   urunler.forEach((u,i) => appendRow(u, i));
 }
 
-// --- JSON tarihi ---
 function setDate(iso) {
-  jsonDate.textContent = iso ? `· ${iso.slice(0,10)}` : '';
+  jsonDate.textContent = iso ? `· ${iso.slice(0,16).replace('T',' ')}` : '';
+}
+
+// Linkleri sayfa sayfa topla — toplam_bulunan_urun_linki ile dur
+async function collectLinks(brand) {
+  const seen = new Set(), all = [];
+  let page = 1, total = null;
+  while(true) {
+    setStatus(`sayfa ${page} taranıyor...`, 0);
+    const res = await workerGet({ u: brand, page, fields: 'urun_linki', limit: 999 });
+    if (total === null) total = res.toplam_bulunan_urun_linki ?? null;
+    const links = (res.urunler||[]).map(u => u.urun_linki).filter(Boolean);
+    let added = 0;
+    links.forEach(l => { if (!seen.has(l)) { seen.add(l); all.push(l); added++; } });
+    if (!added) break;                          // yeni link gelmediyse dur
+    if (total !== null && all.length >= total) break;  // toplama ulaştıysa dur
+    page++; await sleep(rand(DELAY));
+  }
+  return all;
 }
 
 // --- İlk çekim ---
 async function initBrandData(brand) {
-  setStatus(`${brand} taranıyor...`, 0);
   const fields = 'urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
-  let allLinks = [], page = 1;
-  while(true) {
-    setStatus(`sayfa ${page} taranıyor...`, 0);
-    try {
-      const res = await workerGet({ u: brand, page, fields: 'urun_linki', limit: 999 });
-      const links = (res.urunler||[]).map(u => u.urun_linki).filter(Boolean);
-      if (!links.length) break;
-      allLinks.push(...links);
-      if (links.length < 10) break;
-      page++; await sleep(rand(DELAY));
-    } catch(e) { setStatus(`Hata: ${e.message}`); break; }
-  }
-  allLinks = [...new Set(allLinks)];
-  setStatus(`${allLinks.length} ürün bulundu...`, 0);
   tbody.innerHTML = '';
   const urunler = [];
+  let allLinks;
+  try { allLinks = await collectLinks(brand); }
+  catch(e) { setStatus(`Hata: ${e.message}`); return; }
+
+  setStatus(`${allLinks.length} ürün çekiliyor...`, 0);
   for (let i = 0; i < allLinks.length; i++) {
     setStatus(`${i+1}/${allLinks.length}`, 0);
     try {
       const res = await workerGet({ u: allLinks[i], fields });
       const rows = Array.isArray(res) ? res : [res];
-      rows.forEach(r => { if(r && !r.hata) { urunler.push(r); appendRow(r, urunler.length-1); } });
+      rows.forEach(r => { if(r&&!r.hata) { urunler.push(r); appendRow(r, urunler.length-1); } });
     } catch(e) { console.warn(allLinks[i], e.message); }
     if (i < allLinks.length-1) await sleep(rand(DELAY));
   }
@@ -130,39 +134,30 @@ async function refreshBrand(brand, data) {
   const linkSet = new Set(urunler.map(u => u.urun_linki));
   const fields = 'urun_linki,sku,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok,varyant_adi';
 
-  // Yeni ürün kontrolü
-  let liveLinks = [], page = 1;
-  while(true) {
-    try {
-      const res = await workerGet({ u: brand, page, fields: 'urun_linki', limit: 999 });
-      const links = (res.urunler||[]).map(u => u.urun_linki).filter(Boolean);
-      if (!links.length) break;
-      liveLinks.push(...links);
-      if (links.length < 10) break;
-      page++; await sleep(rand(DELAY));
-    } catch { break; }
-  }
-  const newLinks = [...new Set(liveLinks)].filter(l => !linkSet.has(l));
+  setStatus('Yeni ürün kontrolü...', 0);
+  let liveLinks;
+  try { liveLinks = await collectLinks(brand); } catch { liveLinks = []; }
+  const newLinks = liveLinks.filter(l => !linkSet.has(l));
 
-  // Fiyat/stok güncelle — sadece .price hücrelerini flash et
-  const rows = [...tbody.querySelectorAll('tr[data-link]')];
+  const domRows = [...tbody.querySelectorAll('tr[data-link]')];
   for (let i = 0; i < urunler.length; i++) {
     const u = urunler[i];
     setStatus(`güncelleniyor ${i+1}/${urunler.length}`, 0);
-    const tr = rows.find(r => r.dataset.link === u.urun_linki && (!u.varyant_adi || r.querySelector('.variant')?.textContent === u.varyant_adi));
+    const tr = domRows.find(r => r.dataset.link === u.urun_linki &&
+      (!u.varyant_adi || r.querySelector('.variant')?.textContent === u.varyant_adi));
     if (tr) tr.classList.add('updating');
     try {
       const res = await workerGet({ u: u.urun_linki, fields });
-      const match = (() => { const rs = Array.isArray(res)?res:[res]; return u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0]; })();
+      const rs = Array.isArray(res)?res:[res];
+      const match = u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0];
       if (match && !match.hata) {
         u.guncel_fiyat = match.guncel_fiyat; u.usd_kdv_haric = match.usd_kdv_haric;
         u.eur_kdv_haric = match.eur_kdv_haric; u.stok = match.stok;
         if (tr) {
           const out = (u.stok===0||u.stok===null)?'out':'';
           const cells = tr.querySelectorAll('.price');
-          [u.stok??'-', u.guncel_fiyat||'-', u.usd_kdv_haric||'-', u.eur_kdv_haric||'-'].forEach((v,i) => {
-            cells[i].textContent = v; cells[i].className = `price ${out}`;
-          });
+          [u.stok??'-', u.guncel_fiyat||'-', u.usd_kdv_haric||'-', u.eur_kdv_haric||'-']
+            .forEach((v,j) => { cells[j].textContent = v; cells[j].className = `price ${out}`; });
           tr.classList.remove('updating');
         }
       }
@@ -199,7 +194,6 @@ function showNotice(brand, newLinks, json) {
   };
 }
 
-// --- CSV ---
 function exportCsv(urunler, brand) {
   const cols = ['sira_no','urun_linki','kapak_gorsel','sku','marka_adi','urun_adi','varyant_adi','kategori_adi','stok','guncel_fiyat','usd_kdv_haric','eur_kdv_haric','ean'];
   const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
@@ -209,7 +203,6 @@ function exportCsv(urunler, brand) {
   a.download = `${brand}.csv`; a.click();
 }
 
-// --- Brand aç ---
 async function openBrand(brand) {
   activeBrand = brand;
   brandsSection.classList.add('hidden'); productSection.classList.remove('hidden');
@@ -227,7 +220,6 @@ async function openBrand(brand) {
   }
 }
 
-// --- Events ---
 $('btn-back').onclick = () => {
   productSection.classList.add('hidden'); brandsSection.classList.remove('hidden');
   activeBrand = null; notice.classList.add('hidden'); status.classList.add('hidden');
