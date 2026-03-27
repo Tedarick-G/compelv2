@@ -142,7 +142,7 @@ async function refreshBrand(brand, data) {
           const cells=tr.querySelectorAll('.price');
           [u.stok??'-',u.guncel_fiyat||'-',u.usd_kdv_haric||'-',u.eur_kdv_haric||'-']
             .forEach((v,j)=>{ cells[j].textContent=v; cells[j].className=`price ${out}`; });
-          tr.classList.remove('updating');
+          tr.classList.remove('updating'); tr.querySelectorAll('.price').forEach(c=>{c.classList.add('flashed');setTimeout(()=>c.classList.remove('flashed'),1200);});
         }
       }
     } catch {}
