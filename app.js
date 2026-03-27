@@ -1,5 +1,5 @@
 const WORKER = 'https://r2.tvkapora.workers.dev/';
-const DELAY = 1000, JITTER = 400;
+const DELAY = 2000, JITTER = 500;
 const BRANDS = [
   'ableton','allen-heath','arturia','avalon','avid','compel','cranborne-audio',
   'crane-song','denon-dj','fender-studio','genelec','headrush','hosa','m-audio',
