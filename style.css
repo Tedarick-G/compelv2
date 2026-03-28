@@ -47,3 +47,5 @@ tr:hover td{background:#f4f4f2}
 .flashed{animation:flash 1.2s ease-out}
 .new-badge{display:inline-block;padding:1px 6px;background:#111;color:#fff;font-size:10px;margin-left:6px}
 .hidden{display:none!important}
+
+#btn-refresh{position:absolute;right:0}
