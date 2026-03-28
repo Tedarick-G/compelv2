@@ -1,0 +1,88 @@
+name: Fiyat & Stok Güncelle
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 06:00 TR
+    - cron: '0 15 * * *'  # 18:00 TR
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Güncelle
+        env:
+          WORKER: ${{ secrets.WORKER_URL }}
+        run: |
+          node << 'JS'
+          const WORKER = process.env.WORKER;
+          const DELAY = 2500;
+          const FIELDS = 'urun_linki,sku,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok,varyant_adi';
+          const ALL_FIELDS = 'urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          const get = async url => { const r = await fetch(url); if (!r.ok) throw new Error(`${r.status}`); return r.json(); };
+
+          async function collectLinks(brand) {
+            const seen = new Set(), all = [];
+            let page = 1;
+            while(true) {
+              const res = await get(`${WORKER}?u=${brand}&page=${page}&fields=urun_linki`);
+              const links = (res.urunler||[]).map(u=>u.urun_linki).filter(Boolean);
+              if (!links.length) break;
+              let added = 0;
+              links.forEach(l => { if(!seen.has(l)){ seen.add(l); all.push(l); added++; } });
+              if (!added) break;
+              page++;
+              await sleep(DELAY);
+            }
+            return all;
+          }
+
+          async function updateBrand(slug) {
+            console.log(`→ ${slug}`);
+            const kvRes = await fetch(`${WORKER}?get=${slug}`);
+            if (kvRes.status === 404) { console.log(`  KV'de yok, atlanıyor`); return; }
+            const data = await kvRes.json();
+            const urunler = data.urunler || [];
+            const liveLinks = await collectLinks(slug);
+            const linkSet = new Set(urunler.map(u=>u.urun_linki));
+            const newLinks = liveLinks.filter(l=>!linkSet.has(l));
+
+            for (let i = 0; i < urunler.length; i++) {
+              const u = urunler[i];
+              try {
+                const res = await get(`${WORKER}?u=${encodeURIComponent(u.urun_linki)}&fields=${FIELDS}`);
+                const rs = Array.isArray(res)?res:[res];
+                const match = u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0];
+                if (match&&!match.hata) { u.guncel_fiyat=match.guncel_fiyat; u.usd_kdv_haric=match.usd_kdv_haric; u.eur_kdv_haric=match.eur_kdv_haric; u.stok=match.stok; }
+              } catch(e) { console.warn(`  ${e.message}`); }
+              await sleep(DELAY);
+            }
+
+            if (newLinks.length) {
+              console.log(`  ${newLinks.length} yeni ürün`);
+              for (const link of newLinks) {
+                try {
+                  const res = await get(`${WORKER}?u=${encodeURIComponent(link)}&fields=${ALL_FIELDS}`);
+                  const rows = Array.isArray(res)?res:[res];
+                  rows.forEach(r=>{ if(r&&!r.hata) urunler.push(r); });
+                } catch {}
+                await sleep(DELAY);
+              }
+            }
+
+            const json = { ...data, urunler, guncelleme: new Date().toISOString() };
+            await fetch(`${WORKER}?set=${slug}`, { method:'POST', body: JSON.stringify(json) });
+            console.log(`  ✓ ${urunler.length} ürün`);
+          }
+
+          async function main() {
+            const res = await get(`${WORKER}?brands`);
+            const brands = res.brands || [];
+            console.log(`${brands.length} marka`);
+            for (const b of brands) { await updateBrand(b.slug); await sleep(3000); }
+            console.log('Tamamlandı');
+          }
+
+          main().catch(e => { console.error(e); process.exit(1); });
+          JS
