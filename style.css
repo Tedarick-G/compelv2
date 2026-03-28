@@ -32,7 +32,7 @@ button:hover{background:var(--border)}
 #table-wrap{}
 table{width:100%;border-collapse:collapse}
 th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
-td:nth-child(5),th:nth-child(5){width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0}
+td:nth-child(5){width:100%}
 th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.05em;border-bottom:2px solid var(--border)}
 td:first-child{color:var(--muted);font-size:11px;width:36px}
 tr:hover td{background:#f4f4f2}
