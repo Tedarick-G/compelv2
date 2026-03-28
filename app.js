@@ -219,7 +219,6 @@ $('btn-refresh').onclick = async () => {
   if (!activeBrand||!brandData[activeBrand]) { setStatus('önce ilk çekimi yapın'); return; }
   await refreshBrand(activeBrand, JSON.parse(JSON.stringify(brandData[activeBrand])));
 };
-};
 $('btn-init').onclick = async () => {
   if (!activeBrand) return;
   $('btn-init').classList.add('hidden');
