@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>compelv2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <span class="logo">compelv2</span>
+  <span class="site-tag">compel</span>
+  <div id="data-inputs">
+    <label class="file-btn">T-Soft CSV <input type="file" id="tsoft-file" accept=".csv"></label>
+    <button id="aide-btn">Aide Yapıştır</button>
+    <span id="tsoft-status"></span>
+    <span id="aide-status"></span>
+  </div>
+</header>
+
+<div id="aide-modal" class="modal hidden">
+  <div class="modal-inner">
+    <textarea id="aide-paste" placeholder="Aide verisini buraya yapıştırın..."></textarea>
+    <div class="modal-actions">
+      <button id="aide-load">Yükle</button>
+      <button id="aide-close">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div id="brand-list"></div>
+
+  <div id="toolbar" class="hidden">
+    <span id="brand-title"></span>
+    <span id="status"></span>
+    <button id="btn-refresh">Güncelle</button>
+    <button id="btn-init" class="hidden">ilk çekim</button>
+  </div>
+  <div id="notice" class="hidden"></div>
+
+  <div id="col-toggles" class="hidden">
+    <label><input type="checkbox" data-col="0" checked> Sıra</label>
+    <label><input type="checkbox" data-col="1" checked> Görsel</label>
+    <label><input type="checkbox" data-col="2" checked> SKU</label>
+    <label><input type="checkbox" data-col="4" checked> Ürün / Varyant Adı</label>
+    <label><input type="checkbox" data-col="6" checked> Stok (Compel)</label>
+    <label><input type="checkbox" data-col="7" checked> TL</label>
+    <label><input type="checkbox" data-col="10" checked> EAN</label>
+    <label><input type="checkbox" data-col="11" checked> T-Soft Fiyat</label>
+    <label><input type="checkbox" data-col="12" checked> T-Soft Stok</label>
+    <label><input type="checkbox" data-col="13" checked> Aide Stok</label>
+  </div>
+
+  <div id="table-wrap" class="hidden">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th>Sıra</th>
+          <th>Görsel</th>
+          <th>SKU</th>
+          <th>Marka</th>
+          <th class="col-urun">Ürün / Varyant Adı</th>
+          <th>Kategori</th>
+          <th>Stok</th>
+          <th>TL</th>
+          <th>USD</th>
+          <th>EUR</th>
+          <th>EAN</th>
+          <th>T-Soft Fiyat</th>
+          <th>T-Soft Stok</th>
+          <th>Aide Stok</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="unmatched" class="hidden">
+    <div class="unmatched-col">
+      <h3>Compel'de var · T-Soft'ta yok</h3>
+      <table><thead><tr><th>SKU</th><th>Ürün Adı</th><th>EAN</th><th>Stok</th><th>TL</th></tr></thead>
+      <tbody id="tbody-compel-only"></tbody></table>
+    </div>
+    <div class="unmatched-col">
+      <h3>T-Soft'ta var · Compel'de yok</h3>
+      <table><thead><tr><th>Tedarikçi Kodu</th><th>Ürün Adı</th><th>Barkod</th><th>Stok</th><th>Fiyat</th><th>Aktif</th></tr></thead>
+      <tbody id="tbody-tsoft-only"></tbody></table>
+    </div>
+  </div>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
