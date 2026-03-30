@@ -7,7 +7,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
 
-header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
 .logo{font-weight:500;letter-spacing:.05em}
 .site-tag{color:var(--muted);font-size:11px;border:1px solid var(--border);padding:2px 8px}
 
@@ -32,12 +32,12 @@ button:hover{background:var(--border)}
 #table-wrap{}
 table{width:100%;border-collapse:collapse;table-layout:auto}
 th,td{padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:center;width:1%}
-th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.05em;border-bottom:2px solid var(--border)}
+th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.05em;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5}
 tr:hover td{background:#f4f4f2}
 
-/* Ürün/Varyant → sola */
+/* ÃœrÃ¼n/Varyant â†’ sola */
 th.col-urun,td:nth-child(5){text-align:left;width:auto}
-/* TL,USD,EUR → sağa */
+/* TL,USD,EUR â†’ saÄŸa */
 td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 
 .thumb{width:36px;height:36px;object-fit:contain;display:block;margin:0 auto;transition:transform .2s;cursor:zoom-in}
@@ -73,9 +73,11 @@ td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 .unmatched-col{flex:1;overflow-x:auto}
 .unmatched-col h3{font-size:12px;font-weight:500;margin-bottom:8px;color:var(--muted)}
 
-/* T-Soft/Aide eşleşme renkleri */
+/* T-Soft/Aide eÅŸleÅŸme renkleri */
 .match-ok td.ts-col{background:#f0fff4}
 .match-none td.ts-col{background:#fff5f5}
 
 .sort-btn{background:none;border:none;cursor:pointer;font-family:var(--font);font-size:11px;color:var(--muted);padding:0}
 .sort-btn:hover{color:var(--text);background:none}
+
+td:nth-child(7),td:nth-child(8),td:nth-child(9){text-align:center}
