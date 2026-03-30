@@ -322,20 +322,20 @@ function parseAide(text, skipKV) {
 function matchTsoft(u, eanUnique) {
   if(!tsoftData) return null;
   const isVariant = !!u.varyant_adi;
-  // Varyantlı ürün: EAN'lar birbirinden farklıysa EAN ile eşleş, yoksa SKU kullan
-  // Varyantsız ürün: her zaman önce EAN dene
-  const useEan = !isVariant || eanUnique;
-  if(useEan) {
+  // Varyantlı ürün: EAN'lar birbirinden farklıysa EAN ile eşleş, aksi halde SKU
+  // Varyantsız ürün: önce EAN, sonra SKU
+  if(!isVariant || eanUnique) {
     const eans = (u.ean||'').split(/[^0-9]+/).filter(e=>e.length>=8);
     for(const e of eans) {
       const r = tsoftData.byBarkod.get(e) || tsoftData.byBarkod.get(e.replace(/^0+/,''));
       if(r) return r;
     }
+    // EAN ile bulunamadıysa SKU dene
+    if(u.sku) return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
+    return null;
   }
-  // SKU ile eşleş
-  if(u.sku) {
-    return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
-  }
+  // Varyant + aynı/boş EAN: sadece SKU ile eşleş, EAN'a hiç bakma
+  if(u.sku) return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
   return null;
 }
 
@@ -355,26 +355,20 @@ function applyMatching(urunler) {
   const rows = [...tbody.querySelectorAll('tr[data-link]')];
   const compelOnly = [], tsoftMatched = new Set();
 
-  // Aynı ürün linkine ait varyantların EAN'larını analiz et
-  // Tüm varyantlar aynı EAN'a sahipse veya hepsinde EAN yoksa → SKU ile eşleş
-  const linkEanMap = {};
+  // Varyantlar arasında paylaşılan (tekrarlı) EAN'ları tespit et — bunları eşleşmede kullanma
+  const eanUsageCount = {};
   urunler.forEach(u => {
     if(!u.varyant_adi) return;
-    const link = u.urun_linki;
-    if(!linkEanMap[link]) linkEanMap[link] = new Set();
     const ean = (u.ean||'').trim();
-    if(ean) linkEanMap[link].add(ean);
+    if(ean) eanUsageCount[ean] = (eanUsageCount[ean] || 0) + 1;
   });
-  // true = EAN farklı (güvenilir), false = hepsi aynı/boş → SKU kullan
-  const linkEanUnique = {};
-  Object.entries(linkEanMap).forEach(([link, eans]) => {
-    linkEanUnique[link] = eans.size > 1;
-  });
+  // Birden fazla varyant aynı EAN'ı kullanıyorsa o EAN güvenilmez
+  const sharedEans = new Set(Object.keys(eanUsageCount).filter(e => eanUsageCount[e] > 1));
 
   rows.forEach((tr, i) => {
     const u = urunler[i];
     if(!u) return;
-    const eanUnique = u.varyant_adi ? (linkEanUnique[u.urun_linki] || false) : true;
+    const eanUnique = !u.varyant_adi || !(sharedEans.has((u.ean||'').trim()));
     const ts = matchTsoft(u, eanUnique);
     const aide = ts ? aideStok(ts) : null;
 
