@@ -71,7 +71,7 @@ td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 /* Unmatched */
 #unmatched{display:flex;gap:20px;margin-top:20px}
 .unmatched-col{flex:1;overflow-x:auto}
-.unmatched-col h3{font-size:12px;font-weight:500;margin-bottom:8px;color:var(--muted)}
+.unmatched-col h3{font-size:15px;font-weight:500;letter-spacing:.05em;color:var(--text);margin-bottom:8px;text-align:center}
 
 /* T-Soft/Aide eÃ…Å¸leÃ…Å¸me renkleri */
 
@@ -87,3 +87,11 @@ th:nth-child(2),td:nth-child(2),
 th:nth-child(7),td:nth-child(7),
 th:nth-child(10),td:nth-child(10),
 th:nth-child(15),td:nth-child(15){border-left:2px solid var(--border)}
+
+/* T-Soft only tablo seperatÃ¶rleri */
+#tbody-tsoft-only tr > td:nth-child(3),
+#tbody-tsoft-only tr > td:nth-child(4),
+#tbody-tsoft-only tr > td:nth-child(5),
+.unmatched-col thead th:nth-child(3),
+.unmatched-col thead th:nth-child(4),
+.unmatched-col thead th:nth-child(5){border-left:2px solid var(--border)}
