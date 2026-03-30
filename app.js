@@ -319,22 +319,20 @@ function parseAide(text, skipKV) {
 }
 
 // T-Soft eşleştirme: EAN → barkod, sonra SKU → ws
-function matchTsoft(u) {
+function matchTsoft(u, eanUnique) {
   if(!tsoftData) return null;
-  // Varyantlı ürünler SKU ile eşleşsin (EAN varyantlar arası paylaşılabilir)
-  if(u.varyant_adi && u.sku) {
-    const r = tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku);
-    if(r) return r;
-  }
-  // Varyant değilse veya SKU ile bulunamadıysa EAN dene
-  if(!u.varyant_adi) {
+  const isVariant = !!u.varyant_adi;
+  // Varyantlı ürün: EAN'lar birbirinden farklıysa EAN ile eşleş, yoksa SKU kullan
+  // Varyantsız ürün: her zaman önce EAN dene
+  const useEan = !isVariant || eanUnique;
+  if(useEan) {
     const eans = (u.ean||'').split(/[^0-9]+/).filter(e=>e.length>=8);
     for(const e of eans) {
       const r = tsoftData.byBarkod.get(e) || tsoftData.byBarkod.get(e.replace(/^0+/,''));
       if(r) return r;
     }
   }
-  // Son çare: SKU ile dene (varyant olmayan ama EAN'sız ürünler için)
+  // SKU ile eşleş
   if(u.sku) {
     return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
   }
@@ -357,10 +355,27 @@ function applyMatching(urunler) {
   const rows = [...tbody.querySelectorAll('tr[data-link]')];
   const compelOnly = [], tsoftMatched = new Set();
 
+  // Aynı ürün linkine ait varyantların EAN'larını analiz et
+  // Tüm varyantlar aynı EAN'a sahipse veya hepsinde EAN yoksa → SKU ile eşleş
+  const linkEanMap = {};
+  urunler.forEach(u => {
+    if(!u.varyant_adi) return;
+    const link = u.urun_linki;
+    if(!linkEanMap[link]) linkEanMap[link] = new Set();
+    const ean = (u.ean||'').trim();
+    if(ean) linkEanMap[link].add(ean);
+  });
+  // true = EAN farklı (güvenilir), false = hepsi aynı/boş → SKU kullan
+  const linkEanUnique = {};
+  Object.entries(linkEanMap).forEach(([link, eans]) => {
+    linkEanUnique[link] = eans.size > 1;
+  });
+
   rows.forEach((tr, i) => {
     const u = urunler[i];
     if(!u) return;
-    const ts = matchTsoft(u);
+    const eanUnique = u.varyant_adi ? (linkEanUnique[u.urun_linki] || false) : true;
+    const ts = matchTsoft(u, eanUnique);
     const aide = ts ? aideStok(ts) : null;
 
     const tsCell = tr.querySelector('.ts-fiyat');
