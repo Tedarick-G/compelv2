@@ -321,11 +321,20 @@ function parseAide(text, skipKV) {
 // T-Soft eşleştirme: EAN → barkod, sonra SKU → ws
 function matchTsoft(u) {
   if(!tsoftData) return null;
-  const eans = (u.ean||'').split(/[^0-9]+/).filter(e=>e.length>=8);
-  for(const e of eans) {
-    const r = tsoftData.byBarkod.get(e) || tsoftData.byBarkod.get(e.replace(/^0+/,''));
+  // Varyantlı ürünler SKU ile eşleşsin (EAN varyantlar arası paylaşılabilir)
+  if(u.varyant_adi && u.sku) {
+    const r = tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku);
     if(r) return r;
   }
+  // Varyant değilse veya SKU ile bulunamadıysa EAN dene
+  if(!u.varyant_adi) {
+    const eans = (u.ean||'').split(/[^0-9]+/).filter(e=>e.length>=8);
+    for(const e of eans) {
+      const r = tsoftData.byBarkod.get(e) || tsoftData.byBarkod.get(e.replace(/^0+/,''));
+      if(r) return r;
+    }
+  }
+  // Son çare: SKU ile dene (varyant olmayan ama EAN'sız ürünler için)
   if(u.sku) {
     return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
   }
