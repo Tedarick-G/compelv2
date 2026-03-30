@@ -364,7 +364,7 @@ function applyMatching(urunler) {
       if(barkodCell) barkodCell.textContent = ts['Barkod']||'-';
       const tsFiyatRaw = ts['KDV Dahil Fiyat']||'';
       const tsSlug = (ts['SEO Link']||'').trim();
-      const tsUrl = tsSlug ? `https://www.sesci.com.tr/${tsSlug}` : null;
+      const tsUrl = tsSlug ? `https://www.sescibaba.com/${tsSlug}` : null;
       if(tsUrl) {
         tsCell.innerHTML = `<a href="${tsUrl}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${tsFiyatRaw||'-'}</a>`;
       } else {
