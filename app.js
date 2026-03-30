@@ -79,7 +79,7 @@ function makeRow(u, i) {
     <td class="price ${out}">${u.stok??'-'}</td>
     <td class="ts-stok ts-col">-</td>
     <td class="aide-stok ts-col">-</td>
-    <td class="price ${out}">${u.guncel_fiyat||'-'}</td>
+    <td class="price ${out}">${u.guncel_fiyat?`<a href="${u.urun_linki}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${u.guncel_fiyat}</a>`:'-'}</td>
     <td class="price ${out}">${u.usd_kdv_haric||'-'}</td>
     <td class="price ${out}">${u.eur_kdv_haric||'-'}</td>
     <td class="ts-fiyat ts-col">-</td>
@@ -363,7 +363,13 @@ function applyMatching(urunler) {
       const barkodCell = tr.querySelector('.ts-barkod');
       if(barkodCell) barkodCell.textContent = ts['Barkod']||'-';
       const tsFiyatRaw = ts['KDV Dahil Fiyat']||'';
-      tsCell.textContent = tsFiyatRaw||'-';
+      const tsSlug = (ts['SEO Link']||'').trim();
+      const tsUrl = tsSlug ? `https://www.sesci.com.tr/${tsSlug}` : null;
+      if(tsUrl) {
+        tsCell.innerHTML = `<a href="${tsUrl}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${tsFiyatRaw||'-'}</a>`;
+      } else {
+        tsCell.textContent = tsFiyatRaw||'-';
+      }
       tsStokCell.textContent = ts['Stok']||'0';
       aideCell.textContent = aide!=null?aide:'-';
       // Fiyat farkı
@@ -514,7 +520,9 @@ const _origApply = applyMatching;
 window.applyMatching = function(urunler) {
   _origApply(urunler);
   tbody.querySelectorAll('.ts-fiyat').forEach(td => {
-    if(td.textContent && td.textContent !== '-') td.textContent = fmtPrice(td.textContent);
+    const a = td.querySelector('a');
+    if(a) { if(a.textContent && a.textContent !== '-') a.textContent = fmtPrice(a.textContent); }
+    else { if(td.textContent && td.textContent !== '-') td.textContent = fmtPrice(td.textContent); }
   });
 };
 
