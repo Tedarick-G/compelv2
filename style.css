@@ -98,3 +98,6 @@ th:nth-child(15),td:nth-child(15){border-left:2px solid var(--border)}
 
 /* T-Soft only fiyat sÃ¼tunu saÄŸa dayalÄ± */
 #tbody-tsoft-only tr > td:nth-child(5){text-align:right}
+
+/* Unmatched tablo header padding ana tabloyla eÅŸit */
+.unmatched-col thead th{padding-top:2px;padding-bottom:2px;position:static}
