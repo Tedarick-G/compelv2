@@ -72,9 +72,9 @@ function makeRow(u, i) {
   tr.innerHTML = `
     <td>${i+1}</td>
     <td>${u.kapak_gorsel?`<img class="thumb" src="${u.kapak_gorsel}" loading="lazy">`:'<div class="no-img"></div>'}</td>
-    <td>${u.sku||'-'}</td>
+    <td>${u.sku?`<a href="${CRAWLER}${encodeURIComponent(u.urun_linki)}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${u.sku}</a>`:'-'}</td>
     <td>${u.marka_adi||'-'}</td>
-    <td><a class="urun-adi" href="${CRAWLER}${encodeURIComponent(u.urun_linki)}" target="_blank" title="${u.urun_adi||''}">${u.urun_adi||'-'}${u.varyant_adi?` · ${u.varyant_adi}`:''}</a></td>
+    <td><span class="urun-adi" style="cursor:pointer" title="Kopyala" onclick="navigator.clipboard.writeText(this.textContent.trim())">${u.urun_adi||'-'}${u.varyant_adi?` · ${u.varyant_adi}`:''}</span></td>
     <td>${u.kategori_adi||'-'}</td>
     <td class="price ${out}">${u.stok??'-'}</td>
     <td class="aide-stok ts-col">-</td>
