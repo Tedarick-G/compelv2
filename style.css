@@ -35,16 +35,16 @@ th,td{padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
 th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.05em;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5;padding-top:14px;padding-bottom:14px}
 tr:hover td{background:#f4f4f2}
 
-/* ÃœrÃ¼n/Varyant â†’ sola */
+/* ÃƒÅ“rÃƒÂ¼n/Varyant Ã¢â€ â€™ sola */
 th.col-urun,td:nth-child(5){text-align:left;width:auto}
-/* TL,USD,EUR â†’ saÄŸa */
+/* TL,USD,EUR Ã¢â€ â€™ saÃ„Å¸a */
 td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 
 .thumb{width:36px;height:36px;object-fit:contain;display:block;margin:0 auto;transition:transform .2s;cursor:zoom-in}
 .thumb:hover{transform:scale(3);z-index:10;position:relative}
 .no-img{width:36px;height:36px;background:var(--border);margin:0 auto}
 .out{color:#ccc}
-.urun-adi{max-width:280px;display:inline-block;vertical-align:bottom}
+.urun-adi{max-width:280px;display:inline-block;vertical-align:bottom;color:inherit;text-decoration:none}
 .variant{color:var(--muted);font-size:11px;display:block}
 .updating .price{background:#fffbe6;transition:background 0.3s}
 @keyframes flash{0%{background:#d4edda}100%{background:transparent}}
@@ -73,7 +73,7 @@ td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 .unmatched-col{flex:1;overflow-x:auto}
 .unmatched-col h3{font-size:12px;font-weight:500;margin-bottom:8px;color:var(--muted)}
 
-/* T-Soft/Aide eÅŸleÅŸme renkleri */
+/* T-Soft/Aide eÃ…Å¸leÃ…Å¸me renkleri */
 .match-ok td.ts-col{background:#f0fff4}
 .match-none td.ts-col{background:#fff5f5}
 
