@@ -84,4 +84,5 @@ td:nth-child(7),td:nth-child(8),td:nth-child(9){text-align:center}
 
 /* Dikey seperatÃ¶rler â€” Compel Stok (7) ve Compel TL (10) soluna */
 th:nth-child(7),td:nth-child(7),
-th:nth-child(10),td:nth-child(10){border-left:2px solid var(--border)}
+th:nth-child(10),td:nth-child(10),
+th:nth-child(15),td:nth-child(15){border-left:2px solid var(--border)}
