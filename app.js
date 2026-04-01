@@ -5,17 +5,12 @@ const DELAY = 2000, JITTER = 400;
 let activeBrand = null, brandData = {};
 const $ = id => document.getElementById(id);
 const brandList=$('brand-list'), toolbar=$('toolbar'), tableWrap=$('table-wrap'),
-  tbody=$('tbody'), notice=$('notice'), statusEl=$('status'), jsonDate=$('json-date');
+  tbody=$('tbody'), notice=$('notice'), statusEl=$('status');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = ms => ms + Math.floor(Math.random() * JITTER);
 const setStatus = msg => { statusEl.textContent = msg; };
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-function fmtDate(iso){
-  if(!iso)return'';
-  const d=new Date(new Date(iso).getTime()+3*3600000);
-  return d.toISOString().slice(0,16).replace('T',' ');
-}
 function fmtFull(iso){
   if(!iso)return'';
   const d=new Date(new Date(iso).getTime()+3*3600000);
@@ -25,7 +20,6 @@ function fmtFull(iso){
   const label=ds===ts?'Bugün':ds===ys?'Dün':`${ds} ${DAYS[d.getUTCDay()]}`;
   return`${label} ${d.toISOString().slice(11,16)}`;
 }
-const setDate = () => {};
 
 async function workerGet(params) {
   const u = new URL(WORKER);
@@ -90,7 +84,13 @@ function makeRow(u, i) {
 }
 
 function appendRow(u, i) { tbody.appendChild(makeRow(u, i)); }
-function renderTable(urunler) { tbody.innerHTML = ''; urunler.forEach((u,i) => appendRow(u, i)); }
+function renderTable(urunler) {
+  tbody.innerHTML = '';
+  urunler.forEach((u,i) => appendRow(u, i));
+  $('col-toggles').classList.remove('hidden');
+  applyColVisibility();
+  if(tsoftData || aideData) applyMatching(urunler);
+}
 
 async function collectLinks(brand) {
   const seen = new Set(), all = [];
@@ -127,9 +127,7 @@ async function initBrandData(brand) {
     if (i < total-1) await sleep(rand(DELAY));
   }
   const json = { brand, guncelleme: new Date().toISOString(), urunler };
-  await kvSet(brand, json);
-  setDate(json.guncelleme); 
-  $('brand-title').innerHTML=`${activeBrand.charAt(0).toUpperCase()+activeBrand.slice(1)} <span class="brand-meta">· ${urunler.length} ürün · Son Güncelleme: ${fmtFull(json.guncelleme)}</span>`; setStatus('tamamlandı');
+  await kvSet(brand, json); $('brand-title').innerHTML=`${activeBrand.charAt(0).toUpperCase()+activeBrand.slice(1)} <span class="brand-meta">· ${urunler.length} ürün · Son Güncelleme: ${fmtFull(json.guncelleme)}</span>`; setStatus('tamamlandı');
   return json;
 }
 
@@ -168,9 +166,7 @@ async function refreshBrand(brand, data) {
     if (i < total-1) await sleep(rand(DELAY));
   }
 
-  const json = { ...data, urunler, guncelleme: new Date().toISOString() };
-  setDate(json.guncelleme);
-  if (newLinks.length) showNotice(brand, newLinks, json);
+  const json = { ...data, urunler, guncelleme: new Date().toISOString() }; if (newLinks.length) showNotice(brand, newLinks, json);
   else { await kvSet(brand, json);  setStatus('güncellendi — KV kaydedildi'); }
   brandData[brand] = json;
 }
@@ -190,8 +186,7 @@ function showNotice(brand, newLinks, json) {
       } catch {}
       if (i < newLinks.length-1) await sleep(rand(DELAY));
     }
-    json.guncelleme = new Date().toISOString();
-    setDate(json.guncelleme); brandData[brand]=json;
+    json.guncelleme = new Date().toISOString(); brandData[brand]=json;
     await kvSet(brand, json);
     setStatus('yeni ürünler KV\'ye kaydedildi');
   };
@@ -205,7 +200,7 @@ async function openBrand(slug, btn) {
   tableWrap.classList.remove('hidden');
   notice.classList.add('hidden');
   const bt=$('brand-title'); bt.textContent=slug.charAt(0).toUpperCase()+slug.slice(1);
-  tbody.innerHTML = ''; setDate(null); setStatus('yükleniyor...');
+  tbody.innerHTML = ''; setStatus('yükleniyor...');
 
   const data = await kvGet(slug);
   if (!data) {
@@ -214,8 +209,7 @@ async function openBrand(slug, btn) {
     brandData[slug] = null;
   } else {
     $('btn-init').classList.add('hidden'); brandData[slug]=data;
-    renderTable(data.urunler); setDate(data.guncelleme); 
-    $('brand-title').innerHTML=`${slug.charAt(0).toUpperCase()+slug.slice(1)} <span class="brand-meta">· ${data.urunler.length} ürün · Son Güncelleme: ${fmtFull(data.guncelleme)}</span>`; setStatus('');
+    renderTable(data.urunler); $('brand-title').innerHTML=`${slug.charAt(0).toUpperCase()+slug.slice(1)} <span class="brand-meta">· ${data.urunler.length} ürün · Son Güncelleme: ${fmtFull(data.guncelleme)}</span>`; setStatus('');
   }
   
 }
@@ -230,10 +224,8 @@ $('btn-init').onclick = async () => {
   brandData[activeBrand] = await initBrandData(activeBrand);
 };
 
-// Başlangıç
 loadBrands().then(renderBrands);
 
-// KV'den T-Soft ve Aide yükle
 (async () => {
   try {
     const ts = await kvGet('tsoft:data');
@@ -245,13 +237,10 @@ loadBrands().then(renderBrands);
   } catch {}
 })();
 
-// ===== T-SOFT & AIDE =====
-
 const AIDE_AMBARS = new Set(['sesci magaza','sescibaba']);
-let tsoftData = null; // Map: barkod/ws -> row
-let aideData = null;  // Map: stokKodu -> stok
+let tsoftData = null;
+let aideData = null; 
 
-// Marka normalizasyonu (match.js mantığı)
 const BRAND_ALIAS = {
   'warmaudio':'warm audio','allenheath':'allen heath','rodex':'rode',
   'denondj':'denon dj','fenderstudio':'fender studio','universalaudio':'universal audio',
@@ -263,7 +252,6 @@ function normBrand(s) {
   return BRAND_ALIAS[s]||s;
 }
 
-// CSV parse (semicolon veya comma)
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
   const delim = lines[0].includes(';') ? ';' : ',';
@@ -276,7 +264,6 @@ function parseCSV(text) {
   });
 }
 
-// T-Soft yükleme
 function loadTsoft(text, skipKV) {
   const rows = parseCSV(text);
   tsoftData = { byBarkod: new Map(), byWs: new Map(), bySup: new Map(), rows };
@@ -295,7 +282,6 @@ function loadTsoft(text, skipKV) {
   if(activeBrand && brandData[activeBrand]) applyMatching(brandData[activeBrand].urunler);
 }
 
-// Aide parse (tab-separated noisy paste)
 function parseAide(text, skipKV) {
   aideData = new Map();
   const lines = text.split(/\r?\n/);
@@ -318,28 +304,22 @@ function parseAide(text, skipKV) {
   if(activeBrand && brandData[activeBrand]) applyMatching(brandData[activeBrand].urunler);
 }
 
-// T-Soft eşleştirme: EAN → barkod, sonra SKU → ws
 function matchTsoft(u, eanUnique) {
   if(!tsoftData) return null;
   const isVariant = !!u.varyant_adi;
-  // Varyantlı ürün: EAN'lar birbirinden farklıysa EAN ile eşleş, aksi halde SKU
-  // Varyantsız ürün: önce EAN, sonra SKU
   if(!isVariant || eanUnique) {
     const eans = (u.ean||'').split(/[^0-9]+/).filter(e=>e.length>=8);
     for(const e of eans) {
       const r = tsoftData.byBarkod.get(e) || tsoftData.byBarkod.get(e.replace(/^0+/,''));
       if(r) return r;
     }
-    // EAN ile bulunamadıysa SKU dene
     if(u.sku) return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
     return null;
   }
-  // Varyant + aynı/boş EAN: sadece SKU ile eşleş, EAN'a hiç bakma
   if(u.sku) return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
   return null;
 }
 
-// Aide stok
 function aideStok(tsoftRow) {
   if(!aideData || !tsoftRow) return null;
   const sup = (tsoftRow['Tedarikçi Ürün Kodu']||'').trim().toUpperCase();
@@ -348,7 +328,6 @@ function aideStok(tsoftRow) {
   return v != null ? v : null;
 }
 
-// Eşleşme uygula — mevcut tbody satırlarını güncelle
 function applyMatching(urunler) {
   if(!tsoftData && !aideData) return;
   const brand = activeBrand ? normBrand(activeBrand) : '';
@@ -362,7 +341,6 @@ function applyMatching(urunler) {
     const ean = (u.ean||'').trim();
     if(ean) eanUsageCount[ean] = (eanUsageCount[ean] || 0) + 1;
   });
-  // Birden fazla varyant aynı EAN'ı kullanıyorsa o EAN güvenilmez
   const sharedEans = new Set(Object.keys(eanUsageCount).filter(e => eanUsageCount[e] > 1));
 
   rows.forEach((tr, i) => {
@@ -436,6 +414,12 @@ function applyMatching(urunler) {
     return !tsoftMatched.has(ws) && !tsoftMatched.has(sup);
   }) : [];
 
+  // T-Soft fiyat format
+  tbody.querySelectorAll('.ts-fiyat').forEach(td => {
+    const a = td.querySelector('a');
+    if(a) { if(a.textContent && a.textContent !== '-') a.textContent = fmtPrice(a.textContent); }
+    else { if(td.textContent && td.textContent !== '-') td.textContent = fmtPrice(td.textContent); }
+  });
   renderUnmatched(compelOnly, tsoftOnly);
   applyColVisibility();
 }
@@ -451,7 +435,6 @@ function renderUnmatched(compelOnly, tsoftOnly) {
   $('unmatched').classList.toggle('hidden', !tsoftOnly.length);
 }
 
-// Sütun görünürlüğü
 function applyColVisibility() {
   const checks = document.querySelectorAll('#col-toggles input[data-col]');
   const table = $('main-table');
@@ -465,13 +448,11 @@ function applyColVisibility() {
   });
 }
 
-// Events
 $('tsoft-file').onchange = async e => {
   const file = e.target.files[0]; if(!file) return;
   loadTsoft(await file.text());
 };
 
-// Data modal
 let dataModalMode = null;
 function openDataModal(mode, existingDate) {
   dataModalMode = mode;
@@ -529,16 +510,6 @@ document.querySelectorAll('#col-toggles input').forEach(chk => {
   chk.onchange = applyColVisibility;
 });
 
-// renderTable'ı override ederek eşleşme de uygulansın
-const _origRenderTable = renderTable;
-window.renderTable = function(urunler) {
-  _origRenderTable(urunler);
-  $('col-toggles').classList.remove('hidden');
-  applyColVisibility();
-  if(tsoftData || aideData) applyMatching(urunler);
-};
-
-// ===== FIYAT FORMAT =====
 function fmtPrice(v) {
   if(!v||v==='-') return '-';
   const n = parseFloat(String(v).replace(/\./g,'').replace(',','.'));
@@ -546,18 +517,6 @@ function fmtPrice(v) {
   return n.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
-// T-Soft fiyatlarını formatla (applyMatching'den sonra)
-const _origApply = applyMatching;
-window.applyMatching = function(urunler) {
-  _origApply(urunler);
-  tbody.querySelectorAll('.ts-fiyat').forEach(td => {
-    const a = td.querySelector('a');
-    if(a) { if(a.textContent && a.textContent !== '-') a.textContent = fmtPrice(a.textContent); }
-    else { if(td.textContent && td.textContent !== '-') td.textContent = fmtPrice(td.textContent); }
-  });
-};
-
-// ===== SORT =====
 let sortState = { col: null, asc: true };
 let origOrder = [];
 
