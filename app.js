@@ -396,8 +396,10 @@ function applyMatching(urunler) {
             const rv = Math.round(17 + (255-17)*t).toString(16).padStart(2,'0');
             const gv = Math.round(17 + (102-17)*t).toString(16).padStart(2,'0');
             farkCell.style.color = `#${rv}${gv}${gv}`;
+            farkCell.style.fontWeight = 'bold';
           } else {
             farkCell.style.color = '#111';
+            farkCell.style.fontWeight = '';
           }
         } else { farkCell.textContent = '-'; }
       }
