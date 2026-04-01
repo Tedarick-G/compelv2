@@ -391,12 +391,17 @@ function applyMatching(urunler) {
       const tsStok = parseFloat((ts['Stok']||'0').toString().replace(',','.')) || 0;
       tsStokCell.textContent = ts['Stok']||'0';
       aideCell.textContent = aide!=null?aide:'-';
-      // Stok uyarısı: compel veya aide > 0 ama tsoft <= 0 ise kırmızı+altı çizili
       const compelStok = typeof u.stok === 'number' ? u.stok : parseFloat(u.stok) || 0;
       const aideStokVal = aide != null ? aide : 0;
-      const stokUyari = (compelStok > 0 || aideStokVal > 0) && tsStok <= 0;
-      tsStokCell.style.color = stokUyari ? '#e53' : '';
-      tsStokCell.style.textDecoration = stokUyari ? 'underline' : '';
+      // T-Soft stok uyarısı: compel veya aide > 0 ama tsoft <= 0
+      const tsStokUyari = (compelStok > 0 || aideStokVal > 0) && tsStok <= 0;
+      tsStokCell.style.color = tsStokUyari ? '#c0392b' : '';
+      tsStokCell.style.fontWeight = tsStokUyari ? 'bold' : '';
+      tsStokCell.style.textDecoration = '';
+      // Aide stok uyarısı: compel > 0 ama aide bulunamadı veya 0
+      const aideUyari = compelStok > 0 && (aide == null || aideStokVal <= 0);
+      aideCell.style.color = aideUyari ? '#c0392b' : '';
+      aideCell.style.fontWeight = aideUyari ? 'bold' : '';
       // Fiyat farkı
       const farkCell = tr.querySelector('.fiyat-fark');
       if(farkCell) {
