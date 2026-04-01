@@ -101,3 +101,6 @@ th:nth-child(15),td:nth-child(15){border-left:2px solid var(--border)}
 
 /* Unmatched tablo header padding ana tabloyla eÅŸit */
 .unmatched-col thead th{padding-top:2px;padding-bottom:2px;position:static}
+
+/* Checkbox rengi */
+#col-toggles input[type="checkbox"]{accent-color:#ff6666}
