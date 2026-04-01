@@ -391,7 +391,14 @@ function applyMatching(urunler) {
           const pct = ((tsFiyat - compelFiyat) / compelFiyat * 100);
           const abs = Math.abs(pct).toFixed(1).replace('.',',');
           farkCell.textContent = pct > 0 ? `%${abs} ↑` : `%${abs} ↓`;
-          farkCell.style.color = pct > 0 ? '#e53' : '#27a';
+          if(pct > 0) {
+            const t = Math.min(pct / 20, 1);
+            const rv = Math.round(17 + (255-17)*t).toString(16).padStart(2,'0');
+            const gv = Math.round(17 + (102-17)*t).toString(16).padStart(2,'0');
+            farkCell.style.color = `#${rv}${gv}${gv}`;
+          } else {
+            farkCell.style.color = '#111';
+          }
         } else { farkCell.textContent = '-'; }
       }
       tr.classList.add('match-ok'); tr.classList.remove('match-none');
