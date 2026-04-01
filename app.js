@@ -377,10 +377,7 @@ function applyMatching(urunler) {
       tsStokCell.style.color = tsStokUyari ? '#ff6666' : '';
       tsStokCell.style.fontWeight = tsStokUyari ? 'bold' : '';
       tsStokCell.style.textDecoration = '';
-      // Aide stok uyarısı: compel veya tsoft > 0 ama aide bulunamadı veya 0
-      const aideUyari = (compelStok > 0 || tsStok > 0) && (aide == null || aideStokVal <= 0);
-      aideCell.style.color = aideUyari ? '#ff6666' : '';
-      aideCell.style.fontWeight = aideUyari ? 'bold' : '';
+
       // Fiyat farkı
       const farkCell = tr.querySelector('.fiyat-fark');
       if(farkCell) {
