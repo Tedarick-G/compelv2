@@ -1,0 +1,133 @@
+name: WordPress Sync
+on:
+  workflow_dispatch:
+    inputs:
+      marka:
+        description: 'headrush'
+        required: false
+        default: ''
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: WordPress Sync
+        env:
+          WORKER: ${{ secrets.WORKER_URL }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_SECRET: ${{ secrets.WP_SECRET }}
+          MARKA: ${{ github.event.inputs.marka }}
+        run: |
+          node << 'JS'
+          const WORKER    = process.env.WORKER;
+          const WP_URL    = process.env.WP_URL;
+          const WP_SECRET = process.env.WP_SECRET;
+          const MARKA     = (process.env.MARKA || '').trim();
+          const DELAY     = 3000;
+
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+          async function wpPost(endpoint, body) {
+            const r = await fetch(`${WP_URL}/wp-json/fs/v1/${endpoint}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-fs-secret': WP_SECRET },
+              body: JSON.stringify(body)
+            });
+            return r.json();
+          }
+
+          async function productExists(source_url) {
+            const res = await wpPost('product-exists', { source_url });
+            return res.exists ? res.product_id : 0;
+          }
+
+          async function syncUrun(urun, marka_adi) {
+            const source_url = urun.urun_linki;
+            if (!source_url) return;
+
+            const product_id = await productExists(source_url);
+
+            if (product_id) {
+              // Var → sadece fiyat/stok güncelle
+              const variants = urun.varyant_adi ? [{
+                price_text:           String(urun.guncel_fiyat || ''),
+                availability_message: String(urun.stok ?? ''),
+                quantity:             urun.stok,
+                request_url:          source_url,
+                product_code:         urun.sku || '',
+                ean:                  urun.ean  || '',
+                label:                urun.varyant_adi || '',
+                input_value:          urun.varyant_adi || '',
+                dimension:            'varyant',
+              }] : [];
+
+              const res = await wpPost('compel-sync', {
+                product_id,
+                store_name:   'Compel',
+                source_url,
+                price_text:   String(urun.guncel_fiyat || ''),
+                stock_status: String(urun.stok ?? ''),
+                variants,
+              });
+              console.log(`  ↺ güncellendi #${product_id} ${urun.urun_adi || source_url}`);
+            } else {
+              // Yok → yeni ürün oluştur
+              const variants = urun.varyant_adi ? [{
+                price_text:           String(urun.guncel_fiyat || ''),
+                availability_message: String(urun.stok ?? ''),
+                quantity:             urun.stok,
+                request_url:          source_url,
+                product_code:         urun.sku || '',
+                ean:                  urun.ean  || '',
+                label:                urun.varyant_adi || '',
+                input_value:          urun.varyant_adi || '',
+                dimension:            'varyant',
+              }] : [];
+
+              const res = await wpPost('import-product', {
+                product_name:      urun.urun_adi || '',
+                source_url,
+                brand:             marka_adi || urun.marka_adi || '',
+                category_name:     urun.kategori_adi || '',
+                product_code:      urun.sku  || '',
+                ean:               urun.ean  || '',
+                price_text:        String(urun.guncel_fiyat || ''),
+                stock_status:      String(urun.stok ?? ''),
+                image_url:         urun.kapak_gorsel || '',
+                variants,
+              });
+              console.log(`  + oluşturuldu ${urun.urun_adi || source_url}`);
+            }
+          }
+
+          async function syncMarka(slug) {
+            console.log(`→ ${slug}`);
+            const kvRes = await fetch(`${WORKER}?get=${slug}`);
+            if (kvRes.status === 404) { console.log(`  KVde yok, atlanıyor`); return; }
+            const data = await kvRes.json();
+            const urunler = data.urunler || [];
+            console.log(`  ${urunler.length} ürün`);
+            for (const urun of urunler) {
+              try { await syncUrun(urun, slug); }
+              catch(e) { console.warn(`  HATA: ${e.message}`); }
+              await sleep(DELAY);
+            }
+          }
+
+          async function main() {
+            if (MARKA) {
+              await syncMarka(MARKA);
+            } else {
+              const res = await fetch(`${WORKER}?brands`);
+              const brands = (await res.json()).brands || [];
+              console.log(`${brands.length} marka`);
+              for (const b of brands) {
+                await syncMarka(b.slug);
+                await sleep(3000);
+              }
+            }
+            console.log('Tamamlandı');
+          }
+
+          main().catch(e => { console.error(e); process.exit(1); });
+          JS
