@@ -33,7 +33,9 @@ jobs:
               headers: { 'Content-Type': 'application/json', 'x-fs-secret': WP_SECRET },
               body: JSON.stringify(body)
             });
-            return r.json();
+            const text = await r.text();
+            console.log(`  [${endpoint}] HTTP ${r.status}: ${text}`);
+            try { return JSON.parse(text); } catch { return {}; }
           }
 
           async function productExists(source_url) {
@@ -48,7 +50,7 @@ jobs:
             const product_id = await productExists(source_url);
 
             if (product_id) {
-              const res = await wpPost('compel-sync', {
+              await wpPost('compel-sync', {
                 product_id,
                 store_name:   'Compel',
                 source_url,
@@ -56,9 +58,8 @@ jobs:
                 stock_status: String(urun.stok ?? ''),
                 variants:     [],
               });
-              console.log(`  guncellendi #${product_id} ${urun.urun_adi || source_url}`);
             } else {
-              const res = await wpPost('import-product', {
+              await wpPost('import-product', {
                 product_name:  urun.urun_adi || '',
                 source_url,
                 brand:         urun.marka_adi || marka_adi || '',
@@ -70,7 +71,6 @@ jobs:
                 image_url:     urun.kapak_gorsel || '',
                 variants:      [],
               });
-              console.log(`  olusturuldu ${urun.urun_adi || source_url}`);
             }
           }
 
@@ -89,6 +89,7 @@ jobs:
           }
 
           async function main() {
+            console.log(`WP_URL: ${WP_URL}`);
             if (MARKA) {
               await syncMarka(MARKA);
             } else {
