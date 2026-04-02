@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       marka:
-        description: 'headrush'
+        description: 'Marka slug (örn: rode, headrush) — boş bırakırsan KVdeki tüm markalar'
         required: false
-        default: ''
+        default: 'headrush'
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -48,65 +48,39 @@ jobs:
             const product_id = await productExists(source_url);
 
             if (product_id) {
-              // Var → sadece fiyat/stok güncelle
-              const variants = urun.varyant_adi ? [{
-                price_text:           String(urun.guncel_fiyat || ''),
-                availability_message: String(urun.stok ?? ''),
-                quantity:             urun.stok,
-                request_url:          source_url,
-                product_code:         urun.sku || '',
-                ean:                  urun.ean  || '',
-                label:                urun.varyant_adi || '',
-                input_value:          urun.varyant_adi || '',
-                dimension:            'varyant',
-              }] : [];
-
               const res = await wpPost('compel-sync', {
                 product_id,
                 store_name:   'Compel',
                 source_url,
                 price_text:   String(urun.guncel_fiyat || ''),
                 stock_status: String(urun.stok ?? ''),
-                variants,
+                variants:     [],
               });
-              console.log(`  ↺ güncellendi #${product_id} ${urun.urun_adi || source_url}`);
+              console.log(`  guncellendi #${product_id} ${urun.urun_adi || source_url}`);
             } else {
-              // Yok → yeni ürün oluştur
-              const variants = urun.varyant_adi ? [{
-                price_text:           String(urun.guncel_fiyat || ''),
-                availability_message: String(urun.stok ?? ''),
-                quantity:             urun.stok,
-                request_url:          source_url,
-                product_code:         urun.sku || '',
-                ean:                  urun.ean  || '',
-                label:                urun.varyant_adi || '',
-                input_value:          urun.varyant_adi || '',
-                dimension:            'varyant',
-              }] : [];
-
               const res = await wpPost('import-product', {
-                product_name:      urun.urun_adi || '',
+                product_name:  urun.urun_adi || '',
                 source_url,
-                brand:             marka_adi || urun.marka_adi || '',
-                category_name:     urun.kategori_adi || '',
-                product_code:      urun.sku  || '',
-                ean:               urun.ean  || '',
-                price_text:        String(urun.guncel_fiyat || ''),
-                stock_status:      String(urun.stok ?? ''),
-                image_url:         urun.kapak_gorsel || '',
-                variants,
+                brand:         urun.marka_adi || marka_adi || '',
+                category_name: urun.kategori_adi || '',
+                product_code:  urun.sku  || '',
+                ean:           urun.ean  || '',
+                price_text:    String(urun.guncel_fiyat || ''),
+                stock_status:  String(urun.stok ?? ''),
+                image_url:     urun.kapak_gorsel || '',
+                variants:      [],
               });
-              console.log(`  + oluşturuldu ${urun.urun_adi || source_url}`);
+              console.log(`  olusturuldu ${urun.urun_adi || source_url}`);
             }
           }
 
           async function syncMarka(slug) {
-            console.log(`→ ${slug}`);
+            console.log(`Marka: ${slug}`);
             const kvRes = await fetch(`${WORKER}?get=${slug}`);
             if (kvRes.status === 404) { console.log(`  KVde yok, atlanıyor`); return; }
             const data = await kvRes.json();
             const urunler = data.urunler || [];
-            console.log(`  ${urunler.length} ürün`);
+            console.log(`  ${urunler.length} urun bulundu`);
             for (const urun of urunler) {
               try { await syncUrun(urun, slug); }
               catch(e) { console.warn(`  HATA: ${e.message}`); }
@@ -126,7 +100,7 @@ jobs:
                 await sleep(3000);
               }
             }
-            console.log('Tamamlandı');
+            console.log('Tamamlandi');
           }
 
           main().catch(e => { console.error(e); process.exit(1); });
