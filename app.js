@@ -444,6 +444,18 @@ function renderUnmatched(compelOnly, tsoftOnly) {
   $('unmatched').classList.toggle('hidden', !tsoftOnly.length);
 }
 
+
+function applyKutuHasarli() {
+  const chk = document.getElementById('chk-kutu-hasarli');
+  if(!chk) return;
+  const show = chk.checked;
+  tbody.querySelectorAll('tr[data-link]').forEach(tr => {
+    const ad = tr.querySelector('.urun-adi');
+    if(ad && ad.textContent.includes('Kutusu Hasarlı')) {
+      tr.style.display = show ? '' : 'none';
+    }
+  });
+}
 function applyColVisibility() {
   const checks = document.querySelectorAll('#col-toggles input[data-col]');
   const table = $('main-table');
@@ -455,6 +467,7 @@ function applyColVisibility() {
       cell.style.display = visible ? '' : 'none';
     });
   });
+  applyKutuHasarli();
 }
 
 $('tsoft-file').onchange = async e => {
@@ -566,6 +579,8 @@ function sortTable(col) {
     b.innerHTML = `${label} ${b.dataset.sort===col?(asc?'↑':'↓'):'↕'}`;
   });
 }
+
+document.getElementById('chk-kutu-hasarli')?.addEventListener('change', applyKutuHasarli);
 
 document.querySelectorAll('.sort-btn').forEach(btn => {
   btn.onclick = () => sortTable(btn.dataset.sort);
