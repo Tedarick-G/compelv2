@@ -24,7 +24,6 @@ jobs:
           const WP_SECRET = process.env.WP_SECRET;
           const MARKA     = (process.env.MARKA || '').trim();
           const DELAY     = 3000;
-
           const sleep = ms => new Promise(r => setTimeout(r, ms));
 
           async function wpPost(endpoint, body) {
@@ -34,7 +33,7 @@ jobs:
               body: JSON.stringify(body)
             });
             const text = await r.text();
-            console.log(`  [${endpoint}] HTTP ${r.status}: ${text}`);
+            console.log(`  [${endpoint}] HTTP ${r.status}: ${text.slice(0,200)}`);
             try { return JSON.parse(text); } catch { return {}; }
           }
 
@@ -43,9 +42,50 @@ jobs:
             return res.exists ? res.product_id : 0;
           }
 
-          async function syncUrun(urun, marka_adi) {
-            const source_url = urun.urun_linki;
+          // urun_linki bazında grupla
+          function groupByLink(urunler) {
+            const map = new Map();
+            for (const u of urunler) {
+              const key = u.urun_linki;
+              if (!map.has(key)) map.set(key, []);
+              map.get(key).push(u);
+            }
+            return map;
+          }
+
+          // varyant_adi'ndan parametre parse et: "Renk: Kırmızı" → {adi:"renk", etiket:"Kırmızı", deger:"kirmizi"}
+          function parseVariantParam(varyant_adi) {
+            if (!varyant_adi) return null;
+            const parts = varyant_adi.split(':');
+            if (parts.length < 2) return null;
+            const adi = parts[0].trim().toLowerCase();
+            const etiket = parts.slice(1).join(':').trim();
+            const deger = etiket.toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g')
+              .replace(/[ıİ]/g, 'i').replace(/[öÖ]/g, 'o')
+              .replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
+              .replace(/[^a-z0-9-]/g, '');
+            return { adi, etiket, deger };
+          }
+
+          async function syncGrup(rows, marka_adi) {
+            const base = rows[0];
+            const source_url = base.urun_linki;
             if (!source_url) return;
+
+            // varyantları parametrelere dönüştür
+            const variants = rows.map(u => {
+              const param = parseVariantParam(u.varyant_adi);
+              return {
+                sku:          u.sku || '',
+                ean:          u.ean || '',
+                price_text:   String(u.guncel_fiyat || ''),
+                stock_status: String(u.stok ?? ''),
+                image_url:    u.kapak_gorsel || '',
+                parametreler: param ? [{ adi: param.adi, etiket: param.etiket, deger: param.deger }] : [],
+              };
+            });
 
             const product_id = await productExists(source_url);
 
@@ -54,22 +94,22 @@ jobs:
                 product_id,
                 store_name:   'Compel',
                 source_url,
-                price_text:   String(urun.guncel_fiyat || ''),
-                stock_status: String(urun.stok ?? ''),
-                variants:     [],
+                price_text:   String(base.guncel_fiyat || ''),
+                stock_status: String(base.stok ?? ''),
+                variants,
               });
             } else {
               await wpPost('import-product', {
-                product_name:  urun.urun_adi || '',
+                product_name:  base.urun_adi || '',
                 source_url,
-                brand:         urun.marka_adi || marka_adi || '',
-                category_name: urun.kategori_adi || '',
-                product_code:  urun.sku  || '',
-                ean:           urun.ean  || '',
-                price_text:    String(urun.guncel_fiyat || ''),
-                stock_status:  String(urun.stok ?? ''),
-                image_url:     urun.kapak_gorsel || '',
-                variants:      [],
+                brand:         base.marka_adi || marka_adi || '',
+                category_name: base.kategori_adi || '',
+                product_code:  base.sku  || '',
+                ean:           base.ean  || '',
+                price_text:    String(base.guncel_fiyat || ''),
+                stock_status:  String(base.stok ?? ''),
+                image_url:     base.kapak_gorsel || '',
+                variants,
               });
             }
           }
@@ -80,10 +120,14 @@ jobs:
             if (kvRes.status === 404) { console.log(`  KVde yok, atlanıyor`); return; }
             const data = await kvRes.json();
             const urunler = data.urunler || [];
-            console.log(`  ${urunler.length} urun bulundu`);
-            for (const urun of urunler) {
-              try { await syncUrun(urun, slug); }
-              catch(e) { console.warn(`  HATA: ${e.message}`); }
+            console.log(`  ${urunler.length} satır bulundu`);
+
+            const gruplar = groupByLink(urunler);
+            console.log(`  ${gruplar.size} tekil ürün`);
+
+            for (const [link, rows] of gruplar) {
+              try { await syncGrup(rows, slug); }
+              catch(e) { console.warn(`  HATA (${link}): ${e.message}`); }
               await sleep(DELAY);
             }
           }
