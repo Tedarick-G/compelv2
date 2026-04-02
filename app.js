@@ -451,7 +451,7 @@ function applyKutuHasarli() {
   const show = chk.checked;
   tbody.querySelectorAll('tr[data-link]').forEach(tr => {
     const ad = tr.querySelector('.urun-adi');
-    if(ad && ad.textContent.includes('Kutusu Hasarlı')) {
+    if(ad && /hasar/i.test(ad.textContent)) {
       tr.style.display = show ? '' : 'none';
     }
   });
