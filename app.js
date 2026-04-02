@@ -70,7 +70,7 @@ function makeRow(u, i) {
     <td>${u.marka_adi||'-'}</td>
     <td><span class="urun-adi" style="cursor:pointer" title="Kopyala" onclick="navigator.clipboard.writeText(this.textContent.trim())">${u.urun_adi||'-'}${u.varyant_adi?` · ${u.varyant_adi}`:''}</span></td>
     <td>${u.kategori_adi||'-'}</td>
-    <td class="price ${out}">${u.stok??'-'}</td>
+    <td class="price ${out}" style="cursor:pointer" onclick="navigator.clipboard.writeText(this.closest('tr').dataset.sku||'')">${u.stok??'-'}</td>
     <td class="aide-stok ts-col">-</td>
     <td class="ts-stok ts-col">-</td>
     <td class="price ${out}">${u.guncel_fiyat?`<a href="${u.urun_linki}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${u.guncel_fiyat}</a>`:'-'}</td>
@@ -367,7 +367,10 @@ function applyMatching(urunler) {
         tsCell.textContent = tsFiyatRaw||'-';
       }
       const tsStok = parseFloat((ts['Stok']||'0').toString().replace(',','.')) || 0;
+      const tsSup = ts['Tedarikçi Ürün Kodu']||'';
       tsStokCell.textContent = ts['Stok']||'0';
+      tsStokCell.style.cursor = 'pointer';
+      tsStokCell.onclick = () => navigator.clipboard.writeText(tsSup);
       aideCell.textContent = aide!=null?aide:'-';
       const compelStok = typeof u.stok === 'number' ? u.stok : parseFloat(u.stok) || 0;
       const aideStokVal = aide != null ? aide : 0;
