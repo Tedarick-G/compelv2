@@ -69,6 +69,7 @@ function makeRow(u, i) {
     <td>${u.sku?`<a href="${CRAWLER}${encodeURIComponent(u.urun_linki)}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${u.sku}</a>`:'-'}</td>
     <td>${u.marka_adi||'-'}</td>
     <td><span class="urun-adi" style="cursor:pointer" title="Kopyala" onclick="navigator.clipboard.writeText(this.textContent.trim())">${u.urun_adi||'-'}${u.varyant_adi?` · ${u.varyant_adi}`:''}</span></td>
+    <td class="ts-urun-adi ts-col">-</td>
     <td>${u.kategori_adi||'-'}</td>
     <td class="price ${out}" style="cursor:pointer" onclick="navigator.clipboard.writeText(this.closest('tr').dataset.sku||'')">${u.stok??'-'}</td>
     <td class="aide-stok ts-col">-</td>
@@ -353,9 +354,11 @@ function applyMatching(urunler) {
     const tsCell = tr.querySelector('.ts-fiyat');
     const tsStokCell = tr.querySelector('.ts-stok');
     const aideCell = tr.querySelector('.aide-stok');
+    const tsUrunAdiCell = tr.querySelector('.ts-urun-adi');
     if(!tsCell||!tsStokCell||!aideCell) return;
 
     if(ts) {
+      if(tsUrunAdiCell) tsUrunAdiCell.textContent = ts['Ürün Adı']||'-';
       const barkodCell = tr.querySelector('.ts-barkod');
       if(barkodCell) barkodCell.textContent = ts['Barkod']||'-';
       const tsFiyatRaw = ts['KDV Dahil Fiyat']||'';
@@ -384,7 +387,7 @@ function applyMatching(urunler) {
       // Fiyat farkı
       const farkCell = tr.querySelector('.fiyat-fark');
       if(farkCell) {
-        const compelTL = tr.querySelectorAll('td')[9]?.textContent||'';
+        const compelTL = tr.querySelectorAll('td')[10]?.textContent||'';
         const tsFiyat = parseFloat(tsFiyatRaw.replace(/\./g,'').replace(',','.'))||0;
         const compelFiyat = parseFloat(compelTL.replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.'))||0;
         if(tsFiyat && compelFiyat) {
@@ -407,6 +410,7 @@ function applyMatching(urunler) {
       tsoftMatched.add(ts['Web Servis Kodu']||''); tsoftMatched.add(ts['Tedarikçi Ürün Kodu']||'');
     } else {
       tr.querySelector('.ts-barkod') && (tr.querySelector('.ts-barkod').textContent='-');
+      tr.querySelector('.ts-urun-adi') && (tr.querySelector('.ts-urun-adi').textContent='-');
       tsCell.textContent='-'; tsStokCell.textContent='-'; aideCell.textContent=aide!=null?aide:'-';
       tr.classList.add('match-none'); tr.classList.remove('match-ok');
       compelOnly.push(u);
@@ -566,7 +570,7 @@ function sortTable(col) {
   const getVal = tr => {
     const cells = tr.querySelectorAll('td');
     if(col==='stok') return parseNum(cells[6]?.textContent);
-    if(col==='tl')   return parseNum(cells[9]?.textContent);
+    if(col==='tl')   return parseNum(cells[10]?.textContent);
     return 0;
   };
 
