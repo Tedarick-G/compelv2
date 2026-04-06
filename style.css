@@ -1,3 +1,218 @@
+
+
+// compelkv.tvkapora.workers.dev // KV binding: COMPEL_KV // Marka cache — worker ömrü boyunca bellekte let brandsCache=null,brandsCacheTime=0; async function getBrands(){ if(brandsCache&&Date.now()-brandsCacheTime<3600000)return brandsCache; const html=await fetch('https://compel.com.tr/markal
+
+pasted
+
+https://compelkv.tvkapora.workers.dev/
+compelv2/.github/workflows/update.yml
+"name: Fiyat & Stok Güncelle
+on:
+  schedule:
+    - cron: '0 22 * * *'   # 01:00 TR
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 260
+    steps:
+      - name: Güncelle
+        env:
+          WORKER: ${{ secrets.WORKER_URL }}
+        run: |
+          node << 'JS'
+          const WORKER = process.env.WORKER;
+          const DELAY = 5000;
+          const BRAND_DELAY = 5000;
+          const FIELDS = 'urun_linki,sku,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok,varyant_adi';
+          const ALL_FIELDS = 'urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          const get = async url => { const r = await fetch(url); if (!r.ok) throw new Error(${r.status}); return r.json(); };
+          async function collectLinks(brand) {
+            const seen = new Set(), all = [];
+            let page = 1;
+            while(true) {
+              const res = await get(${WORKER}?u=${brand}&page=${page}&fields=urun_linki);
+              const links = (res.urunler||[]).map(u=>u.urun_linki).filter(Boolean);
+              if (!links.length) break;
+              let added = 0;
+              links.forEach(l => { if(!seen.has(l)){ seen.add(l); all.push(l); added++; } });
+              if (!added) break;
+              page++;
+              await sleep(DELAY);
+            }
+            return all;
+          }
+          async function updateBrand(slug) {
+            console.log(→ ${slug});
+            const kvRes = await fetch(${WORKER}?get=${slug});
+            if (kvRes.status === 404) { console.log(  KV'de yok, atlanıyor); return; }
+            const data = await kvRes.json();
+            const urunler = data.urunler || [];
+            const liveLinks = await collectLinks(slug);
+            const linkSet = new Set(urunler.map(u=>u.urun_linki));
+            const newLinks = liveLinks.filter(l=>!linkSet.has(l));
+            for (let i = 0; i < urunler.length; i++) {
+              const u = urunler[i];
+              try {
+                const res = await get(${WORKER}?u=${encodeURIComponent(u.urun_linki)}&fields=${FIELDS});
+                const rs = Array.isArray(res)?res:[res];
+                const match = u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0];
+                if (match&&!match.hata) { u.guncel_fiyat=match.guncel_fiyat; u.usd_kdv_haric=match.usd_kdv_haric; u.eur_kdv_haric=match.eur_kdv_haric; u.stok=match.stok; }
+              } catch(e) { console.warn(  ${e.message}); }
+              await sleep(DELAY);
+            }
+            if (newLinks.length) {
+              console.log(  ${newLinks.length} yeni ürün);
+              for (const link of newLinks) {
+                try {
+                  const res = await get(${WORKER}?u=${encodeURIComponent(link)}&fields=${ALL_FIELDS});
+                  const rows = Array.isArray(res)?res:[res];
+                  rows.forEach(r=>{ if(r&&!r.hata) urunler.push(r); });
+                } catch {}
+                await sleep(DELAY);
+              }
+            }
+            const json = { ...data, urunler, guncelleme: new Date().toISOString() };
+            await fetch(${WORKER}?set=${slug}, { method:'POST', body: JSON.stringify(json) });
+            console.log(  ✓ ${urunler.length} ürün);
+          }
+          async function main() {
+            const res = await get(${WORKER}?brands);
+            const brands = res.brands || [];
+            console.log(${brands.length} marka);
+            for (const b of brands) {
+              await updateBrand(b.slug);
+              await sleep(BRAND_DELAY);
+            }
+            console.log('Tamamlandı');
+          }
+          main().catch(e => { console.error(e); process.exit(1); });
+          JS"
+
+Show more
+11:38
+Kodu inceliyorum. Şu an güncelleyici workflow'un mantığını anlayıp ne sormak istediğinizi netleştirmem gerekiyor.
+
+Ne yapmak istiyorsunuz?
+
+[User dismissed — do not proceed, wait for next instruction]
+
+11:39
+Anlaşıldı, bekliyorum. Ne zaman hazır olursanız söyleyin.
+
+
+app.js
+js
+
+
+index.html
+108 lines
+
+html
+
+
+style.css
+94 lines
+
+css
+
+11:39
+Dosyaları okuyorum.
+
+
+Viewed 2 files
+Viewed 2 files
+Tüm kodu inceledim. Ne yapmamı istediğinizi bekliyorum — özellik mi, düzeltme mi, başka bir şey mi?
+
+sayfanın en yukarısında görünen "<div id="data-inputs">
+    <button id="tsoft-btn">T-Soft</button>
+    <input type="file" id="tsoft-file" accept=".csv" style="display:none">
+    <button id="aide-btn">Aide</button>
+  </div>" butonları "<span id="brand-title">Warm-audio <span class="brand-meta">· 91 ürün · Son Güncelleme: Bugün 05:08</span></span>" butonunun solunda görünsün, en üstteki "<header>
+  <span class="logo">compelv2</span>
+  <span class="site-tag">compel</span>
+  <div id="data-inputs">
+    <button id="tsoft-btn">T-Soft</button>
+    <input type="file" id="tsoft-file" accept=".csv" style="display:none">
+    <button id="aide-btn">Aide</button>
+  </div>
+  <div id="data-modal" class="modal hidden">
+    <div class="modal-inner" style="width:320px">
+      <p id="data-modal-title" style="margin-bottom:12px;font-size:13px"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="data-modal-existing"></button>
+        <button id="data-modal-new"></button>
+        <button id="data-modal-cancel">İptal</button>
+      </div>
+    </div>
+  </div>
+</header>" kısmını komple silelim sayfa biraz yukarıya çıksın anladın mı ?
+
+Show more
+11:44
+Anladım. Şunları yapacağım:
+
+<header> bloğunu komple sil
+#data-inputs div'ini #toolbar'ın içine, #brand-title'ın soluna taşı
+CSS'i buna göre düzenle
+
+Edited 2 files, viewed a file, ran a command
+Edited 2 files, viewed a file, ran a command
+Şimdi CSS'i güncelleyelim — header stillerini kaldır, toolbar'ı düzenle:
+
+
+Edited 3 files, ran a command, read a file
+Edited 3 files, ran a command, read a file
+Yapılanlar:
+
+<header> bloğu (logo, site-tag dahil) komple silindi
+#data-inputs (T-Soft + Aide butonları) toolbar'a taşındı, brand-title'ın soluna
+Toolbar artık soldan sağa: T-Soft · Aide → Marka Başlığı → (Güncelle sağda)
+Sayfa üstten boşluksuz, direkt main padding'iyle başlıyor
+Index
+Code · HTML 
+Style
+Code · CSS 
+"T-Soft" "Aide" ve "Güncelle" butonları yanyana bu sırayla en sağa dayalı olarak görünsün istiyorum.
+
+11:51
+
+Edited 2 files, viewed a file
+Edited 2 files, viewed a file
+HTML'yi düzgün şekilde yeniden yazıyorum:
+
+
+Fix toolbar structure: brand-title left, buttons+status right
+Fix toolbar structure: brand-title left, buttons+status right
+Şimdi CSS'i güncelleyelim:
+
+
+Toolbar: brand-title left, data-inputs right, status between
+Toolbar: brand-title left, data-inputs right, status between
+Ayrıca eski #btn-refresh{position:absolute;right:0} kuralını kaldıralım:
+
+
+Edited a file, ran a command, read a file
+Edited a file, ran a command, read a file
+Toolbar artık şöyle:
+
+Warm-audio · 91 ürün · Son Güncelleme: Bugün 05:08 → sol tarafta, flex:1 ile genişliyor
+T-Soft | Aide | Güncelle → sağ tarafa dayalı, bu sırayla yanyana
+
+Index
+Code · HTML 
+Style
+Code · CSS 
+
+Want to be notified when Claude responds?
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Style · CSS
+Copy
+
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f8f8f6;--surface:#fff;--border:#e0e0d8;
@@ -6,37 +221,39 @@
 }
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
-
+ 
 main{padding:20px}
-
+ 
 #brand-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
 .brand-btn{padding:6px 14px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:var(--font);font-size:12px;color:var(--text);transition:background .15s;letter-spacing:.03em}
 .brand-btn:hover,.brand-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
 .brand-count{font-size:10px;opacity:.6;margin-left:4px}
-
+ 
 #toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;position:relative}
+#brand-title{flex:1}
 #data-inputs{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#btn-refresh{}
 #brand-title{font-weight:500;letter-spacing:.05em;font-size:15px}
 .brand-meta{font-weight:400;margin-left:4px}
 #status{font-size:11px;color:var(--muted)}
 button{padding:5px 12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:var(--font);font-size:12px;transition:background .15s}
 button:hover{background:var(--border)}
-#btn-refresh{position:absolute;right:0}
-
+ 
+ 
 #notice{padding:10px 14px;margin-bottom:12px;border:1px solid #e8c870;background:#fffbea;font-size:12px;cursor:pointer}
 #notice:hover{background:#fff8d6}
-
+ 
 #table-wrap{}
 table{width:100%;border-collapse:collapse;table-layout:auto}
 th,td{padding:2px 10px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:center;width:1%}
 th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.05em;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:5;padding-top:14px;padding-bottom:14px}
 tr:hover td{background:#f4f4f2}
-
-/* ÃƒÆ’Ã…â€œrÃƒÆ’Ã‚Â¼n/Varyant ÃƒÂ¢Ã¢â‚¬ Ã¢â‚¬â„¢ sola */
+ 
+/* ÃƒÅ“rÃƒÂ¼n/Varyant Ã¢â€ â€™ sola */
 th.col-urun,td:nth-child(5){text-align:left;width:auto}
-/* TL,USD,EUR ÃƒÂ¢Ã¢â‚¬ Ã¢â‚¬â„¢ saÃƒâ€Ã…Â¸a */
+/* TL,USD,EUR Ã¢â€ â€™ saÃ„Å¸a */
 td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
-
+ 
 .thumb{width:28px;height:28px;object-fit:contain;display:block;margin:0 auto;transition:transform .2s;cursor:zoom-in}
 .thumb:hover{transform:scale(3);z-index:10;position:relative}
 .no-img{width:28px;height:28px;background:var(--border);margin:0 auto}
@@ -48,41 +265,49 @@ td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 .flashed{animation:flash 1.2s ease-out}
 .new-badge{display:inline-block;padding:1px 6px;background:#111;color:#fff;font-size:10px;margin-left:6px}
 .hidden{display:none!important}
-
+ 
 .file-btn input{display:none}
 #tsoft-status,#aide-status{font-size:11px;color:var(--muted)}
-
+ 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;display:flex;align-items:center;justify-content:center}
 .modal-inner{background:var(--surface);padding:16px;width:500px;max-width:90vw}
 .modal-inner textarea{width:100%;height:200px;font-family:var(--font);font-size:12px;border:1px solid var(--border);padding:8px;resize:vertical}
 .modal-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end}
-
+ 
 #col-toggles{display:flex;flex-wrap:wrap;gap:8px 16px;padding:8px 0;font-size:11px;color:var(--muted)}
 #col-toggles label{display:flex;align-items:center;gap:4px;cursor:pointer}
-
+ 
 #unmatched{display:flex;gap:20px;margin-top:20px}
 .unmatched-col{flex:1;overflow-x:auto}
 .unmatched-col h3{font-size:15px;font-weight:500;letter-spacing:.05em;color:var(--text);margin-bottom:8px;text-align:center}
-
+ 
 .sort-btn{background:none;border:none;cursor:pointer;font-family:var(--font);font-size:11px;color:var(--muted);padding:0}
 .sort-btn:hover{color:var(--text);background:none}
-
+ 
 td:nth-child(7),td:nth-child(8),td:nth-child(9){text-align:center}
-
+ 
 th:nth-child(2),td:nth-child(2),
 th:nth-child(7),td:nth-child(7),
 th:nth-child(10),td:nth-child(10),
 th:nth-child(15),td:nth-child(15){border-left:2px solid var(--border)}
-
+ 
 #tbody-tsoft-only tr > td:nth-child(4),
 #tbody-tsoft-only tr > td:nth-child(5),
 #tbody-tsoft-only tr > td:nth-child(6),
 .unmatched-col thead th:nth-child(4),
 .unmatched-col thead th:nth-child(5),
 .unmatched-col thead th:nth-child(6){border-left:2px solid var(--border)}
-
+ 
 #tbody-tsoft-only tr > td:nth-child(5){text-align:right}
-
+ 
 .unmatched-col thead th{padding-top:2px;padding-bottom:2px;position:static}
-
+ 
 #col-toggles input[type="checkbox"]{accent-color:#ff6666}
+ 
+
+
+
+
+
+
+
