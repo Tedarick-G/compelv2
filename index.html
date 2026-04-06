@@ -7,15 +7,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <span class="logo">compelv2</span>
-  <span class="site-tag">compel</span>
-  <div id="data-inputs">
-    <button id="tsoft-btn">T-Soft</button>
-    <input type="file" id="tsoft-file" accept=".csv" style="display:none">
-    <button id="aide-btn">Aide</button>
-  </div>
-  <div id="data-modal" class="modal hidden">
+<div id="data-modal" class="modal hidden">
     <div class="modal-inner" style="width:320px">
       <p id="data-modal-title" style="margin-bottom:12px;font-size:13px"></p>
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -25,7 +17,6 @@
       </div>
     </div>
   </div>
-</header>
 
 <div id="aide-modal" class="modal hidden">
   <div class="modal-inner">
@@ -41,6 +32,11 @@
   <div id="brand-list"></div>
 
   <div id="toolbar" class="hidden">
+    <div id="data-inputs">
+      <button id="tsoft-btn">T-Soft</button>
+      <input type="file" id="tsoft-file" accept=".csv" style="display:none">
+      <button id="aide-btn">Aide</button>
+    </div>
     <span id="brand-title"></span>
     <span id="status"></span>
     <button id="btn-refresh">Güncelle</button>
