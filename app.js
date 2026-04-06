@@ -589,3 +589,13 @@ document.getElementById('chk-kutu-hasarli')?.addEventListener('change', applyKut
 document.querySelectorAll('.sort-btn').forEach(btn => {
   btn.onclick = () => sortTable(btn.dataset.sort);
 });
+
+function updateThTop() {
+  const sh = document.getElementById('sticky-header');
+  if(!sh) return;
+  const h = sh.offsetHeight;
+  document.querySelectorAll('#main-table th').forEach(th => th.style.top = h + 'px');
+}
+const thObserver = new ResizeObserver(updateThTop);
+thObserver.observe(document.getElementById('sticky-header') || document.body);
+updateThTop();
