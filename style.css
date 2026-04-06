@@ -9,7 +9,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 
 main{padding:20px}
 
-#brand-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+#brand-row{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+#brand-list{display:flex;flex-wrap:wrap;gap:8px;flex:1}
 .brand-btn{padding:6px 14px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:var(--font);font-size:12px;color:var(--text);transition:background .15s;letter-spacing:.03em}
 .brand-btn:hover,.brand-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
 .brand-count{font-size:10px;opacity:.6;margin-left:4px}
@@ -17,7 +18,6 @@ main{padding:20px}
 #toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;position:relative}
 #brand-title{flex:1;font-weight:600;text-align:center}
 #data-inputs{display:flex;align-items:center;gap:8px;flex-shrink:0}
-#btn-refresh{}
 #brand-title{font-weight:500;letter-spacing:.05em;font-size:15px}
 .brand-meta{font-weight:400;margin-left:4px}
 #status{font-size:11px;color:var(--muted)}
