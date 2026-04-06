@@ -15,7 +15,7 @@ main{padding:20px}
 .brand-count{font-size:10px;opacity:.6;margin-left:4px}
 
 #toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;position:relative}
-#brand-title{flex:1}
+#brand-title{flex:1;font-weight:600;text-align:center}
 #data-inputs{display:flex;align-items:center;gap:8px;flex-shrink:0}
 #btn-refresh{}
 #brand-title{font-weight:500;letter-spacing:.05em;font-size:15px}
