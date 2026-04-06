@@ -35,9 +35,9 @@ th{color:var(--muted);font-weight:400;font-size:11px;letter-spacing:.05em;border
 tr:hover td{background:#f4f4f2}
 
 /* ÃƒÅ“rÃƒÂ¼n/Varyant Ã¢â€ â€™ sola */
-th.col-urun,td:nth-child(5){text-align:left;width:auto}
+th.col-urun,td:nth-child(5),td:nth-child(6){text-align:left;width:auto}
 /* TL,USD,EUR Ã¢â€ â€™ saÃ„Å¸a */
-td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
+td:nth-child(11),td:nth-child(12),td:nth-child(13){text-align:right}
 
 .thumb{width:28px;height:28px;object-fit:contain;display:block;margin:0 auto;transition:transform .2s;cursor:zoom-in}
 .thumb:hover{transform:scale(3);z-index:10;position:relative}
@@ -69,12 +69,12 @@ td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:right}
 .sort-btn{background:none;border:none;cursor:pointer;font-family:var(--font);font-size:11px;color:var(--muted);padding:0}
 .sort-btn:hover{color:var(--text);background:none}
 
-td:nth-child(7),td:nth-child(8),td:nth-child(9){text-align:center}
+td:nth-child(8),td:nth-child(9),td:nth-child(10){text-align:center}
 
 th:nth-child(2),td:nth-child(2),
-th:nth-child(7),td:nth-child(7),
-th:nth-child(10),td:nth-child(10),
-th:nth-child(15),td:nth-child(15){border-left:2px solid var(--border)}
+th:nth-child(8),td:nth-child(8),
+th:nth-child(11),td:nth-child(11),
+th:nth-child(16),td:nth-child(16){border-left:2px solid var(--border)}
 
 #tbody-tsoft-only tr > td:nth-child(4),
 #tbody-tsoft-only tr > td:nth-child(5),
