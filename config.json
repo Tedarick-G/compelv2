@@ -1,0 +1,33 @@
+{
+  "markalar": {
+    "ableton": true,
+    "allen-heath": true,
+    "arturia": true,
+    "avalon": true,
+    "avid": true,
+    "compel": true,
+    "cranborne-audio": true,
+    "crane-song": true,
+    "denon-dj": true,
+    "fender-studio": true,
+    "genelec": true,
+    "headrush": true,
+    "hosa": true,
+    "m-audio": true,
+    "m-game": true,
+    "marantz-professional": true,
+    "numark": true,
+    "presonus": true,
+    "rane": true,
+    "rupert-neve-designs": true,
+    "rode": true,
+    "rode-x": true,
+    "sheeran-loopers": true,
+    "sibelius": true,
+    "sonarworks": true,
+    "soundswitch": true,
+    "stanton": true,
+    "universal-audio": true,
+    "warm-audio": true
+  }
+}
