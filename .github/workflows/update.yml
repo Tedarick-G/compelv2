@@ -1,13 +1,16 @@
 name: Fiyat & Stok Güncelle
 on:
   schedule:
-    - cron: '0 22 * * *'   # 01:00 TR
+    - cron: '0 22 * * *'
   workflow_dispatch:
 jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 260
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Güncelle
         env:
           WORKER: ${{ secrets.WORKER_URL }}
@@ -20,6 +23,11 @@ jobs:
           const ALL_FIELDS = 'urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
           const sleep = ms => new Promise(r => setTimeout(r, ms));
           const get = async url => { const r = await fetch(url); if (!r.ok) throw new Error(`${r.status}`); return r.json(); };
+
+          const fs = require('fs');
+          const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+          const aktifMarkalar = config.markalar || {};
+
           async function collectLinks(brand) {
             const seen = new Set(), all = [];
             let page = 1;
@@ -35,7 +43,12 @@ jobs:
             }
             return all;
           }
+
           async function updateBrand(slug) {
+            if (aktifMarkalar[slug] === false) {
+              console.log(`→ ${slug} ATLANDI (pasif)`);
+              return;
+            }
             console.log(`→ ${slug}`);
             const kvRes = await fetch(`${WORKER}?get=${slug}`);
             if (kvRes.status === 404) { console.log(`  KV'de yok, atlanıyor`); return; }
@@ -69,6 +82,7 @@ jobs:
             await fetch(`${WORKER}?set=${slug}`, { method:'POST', body: JSON.stringify(json) });
             console.log(`  ✓ ${urunler.length} ürün`);
           }
+
           async function main() {
             const res = await get(`${WORKER}?brands`);
             const brands = res.brands || [];
@@ -79,5 +93,6 @@ jobs:
             }
             console.log('Tamamlandı');
           }
+
           main().catch(e => { console.error(e); process.exit(1); });
           JS
