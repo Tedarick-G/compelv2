@@ -36,6 +36,7 @@ tr:hover td{background:#f4f4f2}
 
 /* ÃƒÅ“rÃƒÂ¼n/Varyant Ã¢â€ â€™ sola */
 th.col-urun,td:nth-child(5),td:nth-child(6){text-align:left;width:auto}
+td:nth-child(6){text-align:right}
 /* TL,USD,EUR Ã¢â€ â€™ saÃ„Å¸a */
 td:nth-child(11),td:nth-child(12),td:nth-child(13){text-align:right}
 
