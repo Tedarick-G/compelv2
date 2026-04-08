@@ -1,11 +1,14 @@
 name: WordPress Sync
 on:
+  schedule:
+    - cron: '0 3 * * *'    # 06:00 TR
+    - cron: '0 15 * * *'   # 18:00 TR
   workflow_dispatch:
     inputs:
       marka:
-        description: 'Marka slug (örn: rode, headrush) — boş bırakırsan KVdeki tüm markalar'
+        description: 'Marka slug (örn: rode, headrush) — boş bırakırsan aktif tüm markalar'
         required: false
-        default: 'headrush'
+        default: ''
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -42,7 +45,6 @@ jobs:
             return res.exists ? res.product_id : 0;
           }
 
-          // urun_linki bazında grupla
           function groupByLink(urunler) {
             const map = new Map();
             for (const u of urunler) {
@@ -53,7 +55,6 @@ jobs:
             return map;
           }
 
-          // varyant_adi'ndan parametre parse et: "Renk: Kırmızı" → {adi:"renk", etiket:"Kırmızı", deger:"kirmizi"}
           function parseVariantParam(varyant_adi) {
             if (!varyant_adi) return null;
             const parts = varyant_adi.split(':');
@@ -74,7 +75,6 @@ jobs:
             const source_url = base.urun_linki;
             if (!source_url) return;
 
-            // varyantları parametrelere dönüştür
             const variants = rows.map(u => {
               const param = parseVariantParam(u.varyant_adi);
               return {
@@ -132,11 +132,36 @@ jobs:
             }
           }
 
+          async function getActiveMarkas() {
+            const r = await fetch(`${WP_URL}/wp-json/fs/v1/active-brands`, {
+              headers: { 'x-fs-secret': WP_SECRET }
+            });
+            if (!r.ok) return null;
+            const data = await r.json();
+            return data.brands || null;
+          }
+
           async function main() {
             console.log(`WP_URL: ${WP_URL}`);
+
             if (MARKA) {
               await syncMarka(MARKA);
+              console.log('Tamamlandi');
+              return;
+            }
+
+            // Aktif markaları WP'den çek
+            const activeMarkas = await getActiveMarkas();
+
+            if (activeMarkas) {
+              console.log(`${activeMarkas.length} aktif marka (WP panelinden)`);
+              for (const slug of activeMarkas) {
+                await syncMarka(slug);
+                await sleep(3000);
+              }
             } else {
+              // Fallback: tüm markalar
+              console.log('Aktif marka listesi alınamadı, tüm markalar işleniyor');
               const res = await fetch(`${WORKER}?brands`);
               const brands = (await res.json()).brands || [];
               console.log(`${brands.length} marka`);
@@ -145,6 +170,7 @@ jobs:
                 await sleep(3000);
               }
             }
+
             console.log('Tamamlandi');
           }
 
