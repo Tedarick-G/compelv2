@@ -211,8 +211,9 @@ async function openBrand(slug, btn) {
   } else {
     $('btn-init').classList.add('hidden'); brandData[slug]=data;
     renderTable(data.urunler); $('brand-title').innerHTML=`${slug.charAt(0).toUpperCase()+slug.slice(1)} <span class="brand-meta">· ${data.urunler.length} ürün · Son Güncelleme: ${fmtFull(data.guncelleme)}</span>`; setStatus('');
+    const dupes = findDupes(data.urunler);
+    $('btn-dedupe').classList.toggle('hidden', dupes.length === 0);
   }
-  
 }
 
 $('btn-refresh').onclick = async () => {
@@ -223,6 +224,42 @@ $('btn-init').onclick = async () => {
   if (!activeBrand) return;
   $('btn-init').classList.add('hidden');
   brandData[activeBrand] = await initBrandData(activeBrand);
+};
+
+function findDupes(urunler) {
+  const seen = new Map();
+  const dupes = [];
+  urunler.forEach((u, i) => {
+    const key = (u.urun_linki||'') + '|||' + (u.varyant_adi||'');
+    if (seen.has(key)) dupes.push({ idx: i, u, firstIdx: seen.get(key) });
+    else seen.set(key, i);
+  });
+  return dupes;
+}
+
+$('btn-dedupe').onclick = () => {
+  if (!activeBrand || !brandData[activeBrand]) return;
+  const urunler = brandData[activeBrand].urunler;
+  const dupes = findDupes(urunler);
+  if (!dupes.length) { setStatus('Tekrar yok'); return; }
+
+  const list = dupes.map(d =>
+    `• [${d.idx+1}] ${d.u.sku||'-'} — ${d.u.urun_adi||''}${d.u.varyant_adi?' · '+d.u.varyant_adi:''} (ilk: sıra ${d.firstIdx+1})`
+  ).join('\n');
+
+  if (!confirm(`${dupes.length} tekrar bulundu — silinecekler:\n\n${list}\n\nDevam edilsin mi?`)) return;
+
+  const removeIdxs = new Set(dupes.map(d => d.idx));
+  const temiz = urunler.filter((_, i) => !removeIdxs.has(i));
+  const json = { ...brandData[activeBrand], urunler: temiz, guncelleme: new Date().toISOString() };
+
+  kvSet(activeBrand, json).then(() => {
+    brandData[activeBrand] = json;
+    renderTable(temiz);
+    $('brand-title').innerHTML = `${activeBrand.charAt(0).toUpperCase()+activeBrand.slice(1)} <span class="brand-meta">· ${temiz.length} ürün · Son Güncelleme: ${fmtFull(json.guncelleme)}</span>`;
+    setStatus(`${dupes.length} tekrar silindi, KV güncellendi`);
+    $('btn-dedupe').classList.add('hidden');
+  });
 };
 
 loadBrands().then(renderBrands);
