@@ -230,7 +230,7 @@ function findDupes(urunler) {
   const seen = new Map();
   const dupes = [];
   urunler.forEach((u, i) => {
-    const key = (u.urun_linki||'') + '|||' + (u.varyant_adi||'');
+    const key = u.sku ? (u.sku) + '|||' + (u.varyant_adi||'') : (u.urun_linki||'') + '|||' + (u.varyant_adi||'');
     if (seen.has(key)) dupes.push({ idx: i, u, firstIdx: seen.get(key) });
     else seen.set(key, i);
   });
