@@ -79,14 +79,14 @@ th:nth-child(8),td:nth-child(8),
 th:nth-child(11),td:nth-child(11),
 th:nth-child(16),td:nth-child(16){border-left:2px solid var(--border)}
 
-#tbody-tsoft-only tr > td:nth-child(4),
 #tbody-tsoft-only tr > td:nth-child(5),
 #tbody-tsoft-only tr > td:nth-child(6),
-.unmatched-col thead th:nth-child(4),
+#tbody-tsoft-only tr > td:nth-child(7),
 .unmatched-col thead th:nth-child(5),
-.unmatched-col thead th:nth-child(6){border-left:2px solid var(--border)}
+.unmatched-col thead th:nth-child(6),
+.unmatched-col thead th:nth-child(7){border-left:2px solid var(--border)}
 
-#tbody-tsoft-only tr > td:nth-child(5){text-align:right}
+#tbody-tsoft-only tr > td:nth-child(6){text-align:right}
 
 .unmatched-col thead th{padding-top:2px;padding-bottom:2px;position:static}
 

@@ -307,17 +307,19 @@ function parseAide(text, skipKV) {
 
 function matchTsoft(u, eanUnique) {
   if(!tsoftData) return null;
-  const isVariant = !!u.varyant_adi;
-  if(!isVariant || eanUnique) {
+  // SKU eşleşmesini her zaman dene (EAN paylaşımlı olsa bile)
+  if(u.sku) {
+    const bySku = tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku);
+    if(bySku) return bySku;
+  }
+  // EAN eşleşmesini sadece unique EAN'larda dene
+  if(eanUnique) {
     const eans = (u.ean||'').split(/[^0-9]+/).filter(e=>e.length>=8);
     for(const e of eans) {
       const r = tsoftData.byBarkod.get(e) || tsoftData.byBarkod.get(e.replace(/^0+/,''));
       if(r) return r;
     }
-    if(u.sku) return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
-    return null;
   }
-  if(u.sku) return tsoftData.byWs.get(u.sku) || tsoftData.bySup.get(u.sku) || null;
   return null;
 }
 
@@ -442,7 +444,7 @@ function renderUnmatched(compelOnly, tsoftOnly) {
   tt.innerHTML = '';
   tsoftOnly.forEach((r, i) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td>${r['Tedarikçi Ürün Kodu']||'-'}</td><td style="text-align:left">${r['Ürün Adı']||'-'}</td><td>${r['Stok']||'-'}</td><td>${fmtPrice(r['KDV Dahil Fiyat']||'')}</td><td>${r['Barkod']||'-'}</td>`;
+    tr.innerHTML = `<td>${i+1}</td><td>${r['Web Servis Kodu']||'-'}</td><td>${r['Tedarikçi Ürün Kodu']||'-'}</td><td style="text-align:left">${r['Ürün Adı']||'-'}</td><td>${r['Stok']||'-'}</td><td>${fmtPrice(r['KDV Dahil Fiyat']||'')}</td><td>${r['Barkod']||'-'}</td>`;
     tt.appendChild(tr);
   });
   $('unmatched').classList.toggle('hidden', !tsoftOnly.length);
