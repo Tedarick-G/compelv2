@@ -704,23 +704,55 @@ function shortHeads() {
 
 function setupModeButton() {
   const refresh = $('btn-refresh');
-  if(!refresh || $('mode-btn')) return;
+  if(!refresh) return;
 
-  const btn = document.createElement('button');
-  btn.id = 'mode-btn';
-  btn.textContent = 'Mod';
-  btn.className = refresh.className || '';
-  btn.onclick = () => {
-    document.body.classList.toggle('dark-mode');
-    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? '1' : '0');
-  };
+  let saveBtn = $('save-table-btn');
+  if(!saveBtn) {
+    saveBtn = document.createElement('button');
+    saveBtn.id = 'save-table-btn';
+    saveBtn.textContent = 'Kaydet';
+    saveBtn.className = refresh.className || '';
+    saveBtn.onclick = downloadTableCSV;
+  }
 
-  refresh.insertAdjacentElement('afterend', btn);
+  let modeBtn = $('mode-btn');
+  if(!modeBtn) {
+    modeBtn = document.createElement('button');
+    modeBtn.id = 'mode-btn';
+    modeBtn.textContent = 'Mod';
+    modeBtn.className = refresh.className || '';
+    modeBtn.onclick = () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? '1' : '0');
+    };
+  }
 
   const parent = refresh.parentNode;
-  [$('tsoft-btn'), $('aide-btn'), $('btn-refresh'), btn].filter(Boolean).forEach(el => parent.appendChild(el));
+  [$('tsoft-btn'), $('aide-btn'), $('btn-refresh'), saveBtn, modeBtn].filter(Boolean).forEach(el => parent.appendChild(el));
 
   if(localStorage.getItem('darkMode') === '1') document.body.classList.add('dark-mode');
+}
+
+function downloadTableCSV() {
+  const table = $('main-table');
+  if(!table) return;
+
+  const rows = [...table.querySelectorAll('tr')]
+    .filter(tr => tr.offsetParent !== null)
+    .map(tr => [...tr.children]
+      .filter(cell => cell.offsetParent !== null)
+      .map(cell => `"${cell.textContent.replace(/\s+/g,' ').trim().replace(/"/g,'""')}"`)
+      .join(';')
+    )
+    .join('\n');
+
+  const blob = new Blob(['\uFEFF' + rows], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  const brand = activeBrand || 'tablo';
+  a.href = URL.createObjectURL(blob);
+  a.download = `${brand}-tablo.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 stripSortHeaders();
