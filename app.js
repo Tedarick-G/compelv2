@@ -285,7 +285,7 @@ loadBrands().then(renderBrands);
 const AIDE_AMBARS = new Set(['sesci magaza','sescibaba']);
 let tsoftData = null;
 let aideData = null;
-let compelMode = 0;
+let compelMode = 1;
 
 const BRAND_ALIAS = {
   'warmaudio':'warm audio','allenheath':'allen heath','rodex':'rode',
