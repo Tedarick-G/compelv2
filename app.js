@@ -702,9 +702,31 @@ function shortHeads() {
   [[7,'Compel'],[8,'Aide'],[9,'T-Soft'],[10,'Compel TL'],[13,'T-Soft ₺']].forEach(([i,t]) => { if(h[i]) h[i].textContent = t; });
 }
 
+function setupModeButton() {
+  const refresh = $('btn-refresh');
+  if(!refresh || $('mode-btn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'mode-btn';
+  btn.textContent = 'Mod';
+  btn.className = refresh.className || '';
+  btn.onclick = () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? '1' : '0');
+  };
+
+  refresh.insertAdjacentElement('afterend', btn);
+
+  const parent = refresh.parentNode;
+  [$('tsoft-btn'), $('aide-btn'), $('btn-refresh'), btn].filter(Boolean).forEach(el => parent.appendChild(el));
+
+  if(localStorage.getItem('darkMode') === '1') document.body.classList.add('dark-mode');
+}
+
 stripSortHeaders();
 shortHeads();
 setupCompelMode();
+setupModeButton();
 
 function copyFx(v) {
   let s = String(v||'').replace(/[€$]/g,'').trim();
@@ -712,7 +734,7 @@ function copyFx(v) {
   navigator.clipboard.writeText(s);
 }
 
-document.head.insertAdjacentHTML('beforeend','<style>#main-table td.ts-fiyat{text-align:right!important}#main-table tbody tr td:nth-child(12),#main-table tbody tr td:nth-child(13){cursor:pointer}#main-table tbody tr.sel td{background:#f4f4f2!important;color:#111!important;border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}#main-table tbody tr.sel+tr.sel td{border-top:0!important}#main-table tbody tr.sel:has(+tr.sel) td{border-bottom:0!important}#main-table tbody tr.sel td:first-child{border-left:2px solid #ef4444!important}#main-table tbody tr.sel td:last-child{border-right:2px solid #ef4444!important}#main-table tbody tr.sel:hover td{background:#f4f4f2!important}</style>');
+document.head.insertAdjacentHTML('beforeend','<style>#main-table td.ts-fiyat{text-align:right!important}#main-table tbody tr td:nth-child(12),#main-table tbody tr td:nth-child(13){cursor:pointer}#main-table tbody tr.sel td{background:#f4f4f2!important;color:#111!important;border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}#main-table tbody tr.sel+tr.sel td{border-top:0!important}#main-table tbody tr.sel:has(+tr.sel) td{border-bottom:0!important}#main-table tbody tr.sel td:first-child{border-left:2px solid #ef4444!important}#main-table tbody tr.sel td:last-child{border-right:2px solid #ef4444!important}#main-table tbody tr.sel:hover td{background:#f4f4f2!important}body.dark-mode{background:#111!important;color:#e8e8e8!important}body.dark-mode #sticky-header,body.dark-mode header,body.dark-mode .toolbar,body.dark-mode #toolbar{background:#111!important;color:#e8e8e8!important}body.dark-mode table,body.dark-mode th,body.dark-mode td{background:#151515!important;color:#e8e8e8!important;border-color:#3a3a3a!important}body.dark-mode th{background:#1f1f1f!important}body.dark-mode tr:hover td{background:#242424!important}body.dark-mode input,body.dark-mode textarea,body.dark-mode select,body.dark-mode button{background:#242424!important;color:#f2f2f2!important;border-color:#555!important}body.dark-mode .brand-btn{background:#242424!important;color:#f2f2f2!important;border-color:#555!important}body.dark-mode .brand-btn.active,body.dark-mode .active{background:#3a3a3a!important;color:#fff!important}body.dark-mode a{color:#fff!important}body.dark-mode .brand-count{color:#bbb!important}body.dark-mode .match-none td{background:#1b1515!important}body.dark-mode .match-ok td{background:#151b15!important}body.dark-mode #main-table tbody tr.sel td{background:#2a2a2a!important;color:#fff!important;border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}body.dark-mode #main-table tbody tr.sel:hover td{background:#2a2a2a!important}</style>');
 
 document.addEventListener('click', e => {
   const tr = e.target.closest('#main-table tbody tr');
