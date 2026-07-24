@@ -515,8 +515,10 @@ function applyCompelMode() {
   if(!table) return;
   const chk = document.querySelector('#col-toggles input[data-col="7"]');
   if(chk) {
-    chk.checked = compelMode === 0;
-    chk.indeterminate = compelMode === 1;
+    chk.checked = false;
+    chk.indeterminate = false;
+    if(compelMode === 0) chk.checked = true;
+    if(compelMode === 1) chk.indeterminate = true;
     labelText(chk, compelMode === 0 ? 'Compel Stok' : compelMode === 1 ? 'Compel Tümü' : 'Compel');
   }
   table.querySelectorAll('tr > *:nth-child(8)').forEach(cell => {
@@ -684,11 +686,30 @@ const thObserver = new ResizeObserver(updateThTop);
 thObserver.observe(document.getElementById('sticky-header') || document.body);
 updateThTop();
 
+function shortHeads() {
+  const h = document.querySelectorAll('#main-table th');
+  [[7,'Compel'],[8,'Aide'],[9,'T-Soft'],[13,'T-Soft ₺']].forEach(([i,t]) => { if(h[i]) h[i].textContent = t; });
+}
+shortHeads();
+
 setupCompelMode();
 
-document.head.insertAdjacentHTML('beforeend','<style>#main-table tbody tr.sel td{background:#f4f4f2!important;color:#111!important;border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}#main-table tbody tr.sel+tr.sel td{border-top:0!important}#main-table tbody tr.sel:has(+tr.sel) td{border-bottom:0!important}#main-table tbody tr.sel td:first-child{border-left:2px solid #ef4444!important}#main-table tbody tr.sel td:last-child{border-right:2px solid #ef4444!important}#main-table tbody tr.sel:hover td{background:#f4f4f2!important}</style>');
+function copyFx(v) {
+  let s = String(v||'').replace(/[€$]/g,'').trim();
+  s = s.replace(/,00$/,'').replace(/\.00$/,'');
+  navigator.clipboard.writeText(s);
+}
+
+document.head.insertAdjacentHTML('beforeend','<style>#main-table td.ts-fiyat{text-align:right!important}#main-table tbody tr td:nth-child(12),#main-table tbody tr td:nth-child(13){cursor:pointer}#main-table tbody tr.sel td{background:#f4f4f2!important;color:#111!important;border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}#main-table tbody tr.sel+tr.sel td{border-top:0!important}#main-table tbody tr.sel:has(+tr.sel) td{border-bottom:0!important}#main-table tbody tr.sel td:first-child{border-left:2px solid #ef4444!important}#main-table tbody tr.sel td:last-child{border-right:2px solid #ef4444!important}#main-table tbody tr.sel:hover td{background:#f4f4f2!important}</style>');
+
 document.addEventListener('click', e => {
   const tr = e.target.closest('#main-table tbody tr');
-  if(!tr || e.target.closest('a,button,input,select,textarea,.urun-adi,.price,.ts-stok')) return;
+  if(!tr) return;
+  const td = e.target.closest('td');
+  if(td) {
+    const i = [...tr.children].indexOf(td);
+    if(i === 11 || i === 12) return copyFx(td.textContent);
+  }
+  if(e.target.closest('a,button,input,select,textarea,.urun-adi,.price,.ts-stok')) return;
   tr.classList.toggle('sel');
 });
