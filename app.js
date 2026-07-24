@@ -11,6 +11,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = ms => ms + Math.floor(Math.random() * JITTER);
 const setStatus = msg => { statusEl.textContent = msg; };
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+
 function fmtFull(iso){
   if(!iso)return'';
   const d=new Date(new Date(iso).getTime()+3*3600000);
@@ -85,16 +86,35 @@ function makeRow(u, i) {
 }
 
 function appendRow(u, i) { tbody.appendChild(makeRow(u, i)); }
+
 function renderTable(urunler) {
   tbody.innerHTML = '';
   urunler.forEach((u,i) => appendRow(u, i));
   $('col-toggles').classList.remove('hidden');
+  stripSortHeaders();
+  shortHeads();
   applyColVisibility();
   if(tsoftData || aideData) applyMatching(urunler);
 }
 
 function productKey(url) {
   return String(url||'').match(/\/(\d+)-[^/]+\.html(?:[?#]|$)/i)?.[1] || String(url||'').split(/[?#]/)[0];
+}
+
+function dedupeUrunler(urunler=[]) {
+  const seen = new Set();
+  return [...urunler].reverse().filter(u => {
+    const k = productKey(u.urun_linki) + '|||' + (u.varyant_adi||'');
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).reverse();
+}
+
+function autoDedupe(data) {
+  const before = data?.urunler?.length || 0;
+  const urunler = dedupeUrunler(data?.urunler || []);
+  return { data:{...data, urunler}, removed: before - urunler.length };
 }
 
 async function collectLinks(brand) {
@@ -131,15 +151,16 @@ async function initBrandData(brand) {
     } catch(e) { console.warn(allLinks[i], e.message); }
     if (i < total-1) await sleep(rand(DELAY));
   }
-  const json = { brand, guncelleme: new Date().toISOString(), urunler };
-  await kvSet(brand, json); $('brand-title').innerHTML=`${activeBrand.charAt(0).toUpperCase()+activeBrand.slice(1)} <span class="brand-meta">· ${urunler.length} ürün · Son Güncelleme: ${fmtFull(json.guncelleme)}</span>`; setStatus('tamamlandı');
+  const json = { brand, guncelleme: new Date().toISOString(), urunler: dedupeUrunler(urunler) };
+  await kvSet(brand, json);
+  $('brand-title').innerHTML=`${activeBrand.charAt(0).toUpperCase()+activeBrand.slice(1)} <span class="brand-meta">· ${json.urunler.length} ürün · Son Güncelleme: ${fmtFull(json.guncelleme)}</span>`;
+  setStatus('tamamlandı');
   return json;
 }
 
 async function refreshBrand(brand, data) {
-  let urunler = data.urunler || [],seen=new Set;
-  urunler=[...urunler].reverse().filter(u=>{const k=productKey(u.urun_linki)+'|||'+(u.varyant_adi||'');if(seen.has(k))return false;seen.add(k);return true}).reverse();
-  data.urunler=urunler;
+  data = autoDedupe(data).data;
+  let urunler = data.urunler || [];
   renderTable(urunler);
   const fields = 'urun_linki,sku,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok,varyant_adi';
   setStatus('yeni ürün kontrolü...');
@@ -160,22 +181,26 @@ async function refreshBrand(brand, data) {
       const rs = Array.isArray(res)?res:[res];
       const match = u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0];
       if (match&&!match.hata) {
-        u.guncel_fiyat=match.guncel_fiyat; u.usd_kdv_haric=match.usd_kdv_haric;
-        u.eur_kdv_haric=match.eur_kdv_haric; u.stok=match.stok;
+        u.guncel_fiyat=match.guncel_fiyat;
+        u.usd_kdv_haric=match.usd_kdv_haric;
+        u.eur_kdv_haric=match.eur_kdv_haric;
+        u.stok=match.stok;
         if (tr) {
           const out=(u.stok===0||u.stok===null)?'out':'';
           const cells=tr.querySelectorAll('.price');
           [u.stok??'-',u.guncel_fiyat||'-',u.usd_kdv_haric||'-',u.eur_kdv_haric||'-']
             .forEach((v,j)=>{ cells[j].textContent=v; cells[j].className=`price ${out}`; });
-          tr.classList.remove('updating'); tr.querySelectorAll('.price').forEach(c=>{c.classList.add('flashed');setTimeout(()=>c.classList.remove('flashed'),1200);});
+          tr.classList.remove('updating');
+          tr.querySelectorAll('.price').forEach(c=>{c.classList.add('flashed');setTimeout(()=>c.classList.remove('flashed'),1200);});
         }
       }
     } catch {}
     if (i < total-1) await sleep(rand(DELAY));
   }
 
-  const json = { ...data, urunler, guncelleme: new Date().toISOString() }; if (newLinks.length) showNotice(brand, newLinks, json);
-  else { await kvSet(brand, json);  setStatus('güncellendi — KV kaydedildi'); }
+  let json = { ...data, urunler: dedupeUrunler(urunler), guncelleme: new Date().toISOString() };
+  if (newLinks.length) showNotice(brand, newLinks, json);
+  else { await kvSet(brand, json); setStatus('güncellendi — KV kaydedildi'); }
   brandData[brand] = json;
 }
 
@@ -194,8 +219,11 @@ function showNotice(brand, newLinks, json) {
       } catch {}
       if (i < newLinks.length-1) await sleep(rand(DELAY));
     }
-    json.guncelleme = new Date().toISOString(); brandData[brand]=json;
+    json.urunler = dedupeUrunler(json.urunler);
+    json.guncelleme = new Date().toISOString();
+    brandData[brand]=json;
     await kvSet(brand, json);
+    renderTable(json.urunler);
     setStatus('yeni ürünler KV\'ye kaydedildi');
   };
 }
@@ -207,17 +235,28 @@ async function openBrand(slug, btn) {
   toolbar.classList.remove('hidden');
   tableWrap.classList.remove('hidden');
   notice.classList.add('hidden');
-  const bt=$('brand-title'); bt.textContent=slug.charAt(0).toUpperCase()+slug.slice(1);
-  tbody.innerHTML = ''; setStatus('yükleniyor...');
+  const bt=$('brand-title');
+  bt.textContent=slug.charAt(0).toUpperCase()+slug.slice(1);
+  tbody.innerHTML = '';
+  setStatus('yükleniyor...');
 
-  const data = await kvGet(slug);
+  let data = await kvGet(slug);
   if (!data) {
     $('btn-init').classList.remove('hidden');
     setStatus('KV\'de yok — "ilk çekim" yapın');
     brandData[slug] = null;
   } else {
-    $('btn-init').classList.add('hidden'); brandData[slug]=data;
-    renderTable(data.urunler); $('brand-title').innerHTML=`${slug.charAt(0).toUpperCase()+slug.slice(1)} <span class="brand-meta">· ${data.urunler.length} ürün · Son Güncelleme: ${fmtFull(data.guncelleme)}</span>`; setStatus('');
+    const dd = autoDedupe(data);
+    data = dd.data;
+    if(dd.removed) {
+      data.guncelleme = new Date().toISOString();
+      await kvSet(slug, data);
+    }
+    $('btn-init').classList.add('hidden');
+    brandData[slug]=data;
+    renderTable(data.urunler);
+    $('brand-title').innerHTML=`${slug.charAt(0).toUpperCase()+slug.slice(1)} <span class="brand-meta">· ${data.urunler.length} ürün · Son Güncelleme: ${fmtFull(data.guncelleme)}</span>`;
+    setStatus(dd.removed ? `${dd.removed} tekrar otomatik silindi` : '');
     const dupes = findDupes(data.urunler);
     $('btn-dedupe').classList.toggle('hidden', dupes.length === 0);
   }
@@ -227,6 +266,7 @@ $('btn-refresh').onclick = async () => {
   if (!activeBrand||!brandData[activeBrand]) { setStatus('önce ilk çekimi yapın'); return; }
   await refreshBrand(activeBrand, JSON.parse(JSON.stringify(brandData[activeBrand])));
 };
+
 $('btn-init').onclick = async () => {
   if (!activeBrand) return;
   $('btn-init').classList.add('hidden');
@@ -256,15 +296,14 @@ $('btn-dedupe').onclick = () => {
 
   if (!confirm(`${dupes.length} tekrar bulundu — silinecekler:\n\n${list}\n\nDevam edilsin mi?`)) return;
 
-  const removeIdxs = new Set(dupes.map(d => d.idx));
-  const temiz = urunler.filter((_, i) => !removeIdxs.has(i));
+  const temiz = dedupeUrunler(urunler);
   const json = { ...brandData[activeBrand], urunler: temiz, guncelleme: new Date().toISOString() };
 
   kvSet(activeBrand, json).then(() => {
     brandData[activeBrand] = json;
     renderTable(temiz);
     $('brand-title').innerHTML = `${activeBrand.charAt(0).toUpperCase()+activeBrand.slice(1)} <span class="brand-meta">· ${temiz.length} ürün · Son Güncelleme: ${fmtFull(json.guncelleme)}</span>`;
-    setStatus(`${dupes.length} tekrar silindi, KV güncellendi`);
+    setStatus(`${urunler.length - temiz.length} tekrar silindi, KV güncellendi`);
     $('btn-dedupe').classList.add('hidden');
   });
 };
@@ -292,6 +331,7 @@ const BRAND_ALIAS = {
   'denondj':'denon dj','fenderstudio':'fender studio','universalaudio':'universal audio',
   'rupertnevedesigns':'rupert neve','marantzprofessional':'marantz'
 };
+
 function normBrand(s) {
   s=(s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[øØ]/g,'o').toLowerCase().replace(/[^a-z0-9]+/g,'').trim();
@@ -322,9 +362,7 @@ function loadTsoft(text, skipKV) {
     if(sup) tsoftData.bySup.set(sup, r);
   });
   const date = fmtFull(new Date().toISOString());
-  if(!skipKV) {
-    kvSet('tsoft:data', {text, date});
-  }
+  if(!skipKV) kvSet('tsoft:data', {text, date});
   if(activeBrand && brandData[activeBrand]) applyMatching(brandData[activeBrand].urunler);
 }
 
@@ -344,9 +382,7 @@ function parseAide(text, skipKV) {
     if(alt !== stokKodu) aideData.set(alt, (aideData.get(alt)||0) + stok);
   }
   const date = fmtFull(new Date().toISOString());
-  if(!skipKV) {
-    kvSet('aide:data', {text, date});
-  }
+  if(!skipKV) kvSet('aide:data', {text, date});
   if(activeBrand && brandData[activeBrand]) applyMatching(brandData[activeBrand].urunler);
 }
 
@@ -408,17 +444,16 @@ function applyMatching(urunler) {
       const tsFiyatRaw = ts['KDV Dahil Fiyat']||'';
       const tsSlug = (ts['SEO Link']||'').trim();
       const tsUrl = tsSlug ? `https://www.sescibaba.com/${tsSlug}` : null;
-      if(tsUrl) {
-        tsCell.innerHTML = `<a href="${tsUrl}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${tsFiyatRaw||'-'}</a>`;
-      } else {
-        tsCell.textContent = tsFiyatRaw||'-';
-      }
+      if(tsUrl) tsCell.innerHTML = `<a href="${tsUrl}" target="_blank" style="color:inherit;text-decoration:none;cursor:pointer">${tsFiyatRaw||'-'}</a>`;
+      else tsCell.textContent = tsFiyatRaw||'-';
+
       const tsStok = parseFloat((ts['Stok']||'0').toString().replace(',','.')) || 0;
       const tsSup = ts['Tedarikçi Ürün Kodu']||'';
       tsStokCell.textContent = ts['Stok']||'0';
       tsStokCell.style.cursor = 'pointer';
       tsStokCell.onclick = () => navigator.clipboard.writeText(tsSup);
       aideCell.textContent = aide!=null?aide:'-';
+
       const compelStok = typeof u.stok === 'number' ? u.stok : parseFloat(u.stok) || 0;
       const aideStokVal = aide != null ? aide : 0;
       const tsStokUyari = (compelStok > 0 || aideStokVal > 0) && tsStok <= 0
@@ -446,15 +481,20 @@ function applyMatching(urunler) {
             farkCell.style.color = '#111';
             farkCell.style.fontWeight = '';
           }
-        } else { farkCell.textContent = '-'; }
+        } else farkCell.textContent = '-';
       }
-      tr.classList.add('match-ok'); tr.classList.remove('match-none');
-      tsoftMatched.add(ts['Web Servis Kodu']||''); tsoftMatched.add(ts['Tedarikçi Ürün Kodu']||'');
+      tr.classList.add('match-ok');
+      tr.classList.remove('match-none');
+      tsoftMatched.add(ts['Web Servis Kodu']||'');
+      tsoftMatched.add(ts['Tedarikçi Ürün Kodu']||'');
     } else {
       tr.querySelector('.ts-barkod') && (tr.querySelector('.ts-barkod').textContent='-');
       tr.querySelector('.ts-urun-adi') && (tr.querySelector('.ts-urun-adi').textContent='-');
-      tsCell.textContent='-'; tsStokCell.textContent='-'; aideCell.textContent=aide!=null?aide:'-';
-      tr.classList.add('match-none'); tr.classList.remove('match-ok');
+      tsCell.textContent='-';
+      tsStokCell.textContent='-';
+      aideCell.textContent=aide!=null?aide:'-';
+      tr.classList.add('match-none');
+      tr.classList.remove('match-ok');
       compelOnly.push(u);
     }
   });
@@ -473,6 +513,7 @@ function applyMatching(urunler) {
     if(a) { if(a.textContent && a.textContent !== '-') a.textContent = fmtPrice(a.textContent); }
     else { if(td.textContent && td.textContent !== '-') td.textContent = fmtPrice(td.textContent); }
   });
+
   renderUnmatched(compelOnly, tsoftOnly);
   applyColVisibility();
 }
@@ -560,11 +601,13 @@ function applyColVisibility() {
 }
 
 $('tsoft-file').onchange = async e => {
-  const file = e.target.files[0]; if(!file) return;
+  const file = e.target.files[0];
+  if(!file) return;
   loadTsoft(await file.text());
 };
 
 let dataModalMode = null;
+
 function openDataModal(mode, existingDate) {
   dataModalMode = mode;
   const modal = $('data-modal');
@@ -612,9 +655,13 @@ $('aide-btn').onclick = async () => {
 };
 
 $('aide-close').onclick = () => $('aide-modal').classList.add('hidden');
+
 $('aide-load').onclick = () => {
   const txt = $('aide-paste').value;
-  if(txt.trim()) { parseAide(txt); $('aide-modal').classList.add('hidden'); }
+  if(txt.trim()) {
+    parseAide(txt);
+    $('aide-modal').classList.add('hidden');
+  }
 };
 
 document.querySelectorAll('#col-toggles input').forEach(chk => {
@@ -628,53 +675,7 @@ function fmtPrice(v) {
   return n.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
-let sortState = { col: null, asc: true };
-let origOrder = [];
-
-function parseNum(s) {
-  if(!s||s==='-') return -Infinity;
-  return parseFloat(String(s).replace(/\./g,'').replace(',','.')) || 0;
-}
-
-function sortTable(col) {
-  const rows = [...tbody.querySelectorAll('tr[data-link]')];
-  if(!origOrder.length) origOrder = [...rows];
-
-  if(col === 'idx') {
-    origOrder.forEach(r => tbody.appendChild(r));
-    sortState = { col: null, asc: true };
-    document.querySelectorAll('.sort-btn').forEach(b => {
-      b.dataset.sort !== 'idx' && (b.innerHTML = b.innerHTML.replace(/[↑↓↕]/g,'↕'));
-    });
-    return;
-  }
-
-  const asc = sortState.col === col ? !sortState.asc : true;
-  sortState = { col, asc };
-
-  const getVal = tr => {
-    const cells = tr.querySelectorAll('td');
-    if(col==='stok') return parseNum(cells[7]?.textContent);
-    if(col==='tl')   return parseNum(cells[10]?.textContent);
-    return 0;
-  };
-
-  rows.sort((a,b) => asc ? getVal(a)-getVal(b) : getVal(b)-getVal(a));
-  rows.forEach(r => tbody.appendChild(r));
-
-  document.querySelectorAll('.sort-btn').forEach(b => {
-    if(b.dataset.sort==='idx') return;
-    const label = b.dataset.sort==='stok'?'Stok':'TL';
-    b.innerHTML = `${label} ${b.dataset.sort===col?(asc?'↑':'↓'):'↕'}`;
-  });
-  applyRowFilters();
-}
-
 document.getElementById('chk-kutu-hasarli')?.addEventListener('change', applyKutuHasarli);
-
-document.querySelectorAll('.sort-btn').forEach(btn => {
-  btn.onclick = () => sortTable(btn.dataset.sort);
-});
 
 function updateThTop() {
   const sh = document.getElementById('sticky-header');
@@ -682,16 +683,27 @@ function updateThTop() {
   const h = sh.offsetHeight;
   document.querySelectorAll('#main-table th').forEach(th => th.style.top = h + 'px');
 }
+
 const thObserver = new ResizeObserver(updateThTop);
 thObserver.observe(document.getElementById('sticky-header') || document.body);
 updateThTop();
 
+function stripSortHeaders() {
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    const text = btn.textContent.replace(/[↕↑↓]/g,'').trim();
+    const th = btn.closest('th');
+    if(th) th.textContent = text;
+    else btn.replaceWith(document.createTextNode(text));
+  });
+}
+
 function shortHeads() {
   const h = document.querySelectorAll('#main-table th');
-  [[7,'Compel'],[8,'Aide'],[9,'T-Soft'],[13,'T-Soft ₺']].forEach(([i,t]) => { if(h[i]) h[i].textContent = t; });
+  [[7,'Compel'],[8,'Aide'],[9,'T-Soft'],[10,'Compel TL'],[13,'T-Soft ₺']].forEach(([i,t]) => { if(h[i]) h[i].textContent = t; });
 }
-shortHeads();
 
+stripSortHeaders();
+shortHeads();
 setupCompelMode();
 
 function copyFx(v) {
