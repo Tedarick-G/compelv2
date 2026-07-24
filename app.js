@@ -637,3 +637,10 @@ function updateThTop() {
 const thObserver = new ResizeObserver(updateThTop);
 thObserver.observe(document.getElementById('sticky-header') || document.body);
 updateThTop();
+
+document.head.insertAdjacentHTML('beforeend','<style>#main-table tbody tr.sel td{border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}#main-table tbody tr.sel td:first-child{border-left:2px solid #ef4444!important}#main-table tbody tr.sel td:last-child{border-right:2px solid #ef4444!important}</style>');
+document.addEventListener('click', e => {
+  const tr = e.target.closest('#main-table tbody tr');
+  if(!tr || e.target.closest('a,button,input,select,textarea,.urun-adi,.price,.ts-stok')) return;
+  tr.classList.toggle('sel');
+});
