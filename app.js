@@ -284,7 +284,8 @@ loadBrands().then(renderBrands);
 
 const AIDE_AMBARS = new Set(['sesci magaza','sescibaba']);
 let tsoftData = null;
-let aideData = null; 
+let aideData = null;
+let compelMode = 0;
 
 const BRAND_ALIAS = {
   'warmaudio':'warm audio','allenheath':'allen heath','rodex':'rode',
@@ -488,27 +489,71 @@ function renderUnmatched(compelOnly, tsoftOnly) {
 }
 
 function applyKutuHasarli() {
-  const chk = document.getElementById('chk-kutu-hasarli');
-  if(!chk) return;
-  const show = chk.checked;
+  applyRowFilters();
+}
+
+function applyRowFilters() {
+  const showHasar = document.getElementById('chk-kutu-hasarli')?.checked ?? true;
   tbody.querySelectorAll('tr[data-link]').forEach(tr => {
-    const ad = tr.querySelector('.urun-adi');
-    if(ad && /hasar/i.test(ad.textContent)) {
-      tr.style.display = show ? '' : 'none';
-    }
+    const hasar = /hasar/i.test(tr.querySelector('.urun-adi')?.textContent||'');
+    const stok = parseFloat((tr.querySelectorAll('td')[7]?.textContent||'0').replace(',','.')) || 0;
+    tr.style.display = ((!showHasar && hasar) || (compelMode === 0 && stok <= 0)) ? 'none' : '';
   });
 }
+
+function labelText(chk, txt) {
+  const l = chk?.closest('label');
+  if(!l) return;
+  [...l.childNodes].forEach(n => { if(n.nodeType===3) n.nodeValue=''; });
+  let s = l.querySelector('.cname');
+  if(!s) { s = document.createElement('span'); s.className='cname'; l.appendChild(s); }
+  s.textContent = ' ' + txt;
+}
+
+function applyCompelMode() {
+  const table = $('main-table');
+  if(!table) return;
+  const chk = document.querySelector('#col-toggles input[data-col="7"]');
+  if(chk) {
+    chk.checked = compelMode === 0;
+    chk.indeterminate = compelMode === 1;
+    labelText(chk, compelMode === 0 ? 'Compel Stok' : compelMode === 1 ? 'Compel Tümü' : 'Compel');
+  }
+  table.querySelectorAll('tr > *:nth-child(8)').forEach(cell => {
+    cell.style.display = compelMode === 2 ? 'none' : '';
+  });
+  applyRowFilters();
+}
+
+function setupCompelMode() {
+  const marka = document.querySelector('#col-toggles input[data-col="3"]');
+  marka?.closest('label,div')?.remove();
+
+  const chk = document.querySelector('#col-toggles input[data-col="7"]');
+  if(chk) {
+    chk.addEventListener('click', e => {
+      e.preventDefault();
+      compelMode = (compelMode + 1) % 3;
+      applyColVisibility();
+    });
+  }
+  applyColVisibility();
+}
+
 function applyColVisibility() {
   const checks = document.querySelectorAll('#col-toggles input[data-col]');
   const table = $('main-table');
   if(!table) return;
   checks.forEach(chk => {
     const col = parseInt(chk.dataset.col);
+    if(col === 3 || col === 7) return;
     const visible = chk.checked;
     table.querySelectorAll(`tr > *:nth-child(${col+1})`).forEach(cell => {
       cell.style.display = visible ? '' : 'none';
     });
   });
+  table.querySelectorAll('tr > *:nth-child(4)').forEach(cell => cell.style.display = 'none');
+  applyCompelMode();
   applyKutuHasarli();
 }
 
@@ -607,7 +652,7 @@ function sortTable(col) {
 
   const getVal = tr => {
     const cells = tr.querySelectorAll('td');
-    if(col==='stok') return parseNum(cells[6]?.textContent);
+    if(col==='stok') return parseNum(cells[7]?.textContent);
     if(col==='tl')   return parseNum(cells[10]?.textContent);
     return 0;
   };
@@ -620,6 +665,7 @@ function sortTable(col) {
     const label = b.dataset.sort==='stok'?'Stok':'TL';
     b.innerHTML = `${label} ${b.dataset.sort===col?(asc?'↑':'↓'):'↕'}`;
   });
+  applyRowFilters();
 }
 
 document.getElementById('chk-kutu-hasarli')?.addEventListener('change', applyKutuHasarli);
@@ -637,6 +683,8 @@ function updateThTop() {
 const thObserver = new ResizeObserver(updateThTop);
 thObserver.observe(document.getElementById('sticky-header') || document.body);
 updateThTop();
+
+setupCompelMode();
 
 document.head.insertAdjacentHTML('beforeend','<style>#main-table tbody tr.sel td{background:#f4f4f2!important;color:#111!important;border-top:2px solid #ef4444!important;border-bottom:2px solid #ef4444!important}#main-table tbody tr.sel+tr.sel td{border-top:0!important}#main-table tbody tr.sel:has(+tr.sel) td{border-bottom:0!important}#main-table tbody tr.sel td:first-child{border-left:2px solid #ef4444!important}#main-table tbody tr.sel td:last-child{border-right:2px solid #ef4444!important}#main-table tbody tr.sel:hover td{background:#f4f4f2!important}</style>');
 document.addEventListener('click', e => {
