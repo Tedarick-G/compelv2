@@ -1,83 +1,396 @@
 name: Fiyat & Stok Güncelle
+
 on:
   schedule:
-    - cron: '0 22 * * *'   # 01:00 TR
+    - cron: '0 3 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
+    inputs:
+      marka:
+        description: 'Marka slug (örn: rode, headrush) — boş bırakırsan aktif/tüm markalar'
+        required: false
+        default: ''
+      mode:
+        description: 'auto: KV varsa sadece fiyat/stok, rebuild: tüm ürünü baştan çek, refresh: sadece fiyat/stok'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - refresh
+          - rebuild
+      sync_wp:
+        description: 'WordPress’e gönderilsin mi? Test için false seçilebilir.'
+        required: false
+        default: true
+        type: boolean
+
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 260
+    timeout-minutes: 360
+
     steps:
-      - name: Güncelle
+      - name: Fiyat & Stok Güncelle
         env:
           WORKER: ${{ secrets.WORKER_URL }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_SECRET: ${{ secrets.WP_SECRET }}
+          MARKA: ${{ github.event.inputs.marka || '' }}
+          MODE: ${{ github.event.inputs.mode || 'auto' }}
+          SYNC_WP: ${{ github.event.inputs.sync_wp || 'true' }}
         run: |
           node << 'JS'
-          const WORKER = process.env.WORKER;
-          const DELAY = 5000;
-          const BRAND_DELAY = 5000;
-          const FIELDS = 'urun_linki,sku,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok,varyant_adi';
-          const ALL_FIELDS = 'urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
+          const WORKER    = (process.env.WORKER || '').replace(/\/+$/, '');
+          const WP_URL    = (process.env.WP_URL || '').replace(/\/+$/, '');
+          const WP_SECRET = process.env.WP_SECRET || '';
+          const MARKA     = (process.env.MARKA || '').trim();
+          const MODE      = (process.env.MODE || 'auto').trim();
+          const SYNC_WP   = String(process.env.SYNC_WP || 'true') === 'true';
+          const DELAY     = 3000;
+
+          const FULL_FIELDS = 'sira_no,urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
+          const DYN_FIELDS  = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
+
           const sleep = ms => new Promise(r => setTimeout(r, ms));
-          const get = async url => { const r = await fetch(url); if (!r.ok) throw new Error(`${r.status}`); return r.json(); };
-          async function collectLinks(brand) {
-            const seen = new Set(), all = [];
-            let page = 1;
-            while(true) {
-              const res = await get(`${WORKER}?u=${brand}&page=${page}&fields=urun_linki`);
-              const links = (res.urunler||[]).map(u=>u.urun_linki).filter(Boolean);
-              if (!links.length) break;
-              let added = 0;
-              links.forEach(l => { if(!seen.has(l)){ seen.add(l); all.push(l); added++; } });
-              if (!added) break;
-              page++;
-              await sleep(DELAY);
-            }
-            return all;
+
+          if (!WORKER) throw new Error('WORKER_URL secret eksik');
+          if (SYNC_WP && !WP_URL) throw new Error('WP_URL secret eksik');
+          if (SYNC_WP && !WP_SECRET) throw new Error('WP_SECRET secret eksik');
+
+          async function fetchJson(url, opt = {}) {
+            const r = await fetch(url, opt);
+            const text = await r.text();
+            console.log(`[HTTP ${r.status}] ${url}`);
+            if (!r.ok) throw new Error(`HTTP ${r.status}: ${text.slice(0,300)}`);
+            try { return JSON.parse(text); }
+            catch { throw new Error(`JSON okunamadı: ${text.slice(0,300)}`); }
           }
-          async function updateBrand(slug) {
-            console.log(`→ ${slug}`);
-            const kvRes = await fetch(`${WORKER}?get=${slug}`);
-            if (kvRes.status === 404) { console.log(`  KV'de yok, atlanıyor`); return; }
-            const data = await kvRes.json();
-            const urunler = data.urunler || [];
-            const liveLinks = await collectLinks(slug);
-            const linkSet = new Set(urunler.map(u=>u.urun_linki));
-            const newLinks = liveLinks.filter(l=>!linkSet.has(l));
-            for (let i = 0; i < urunler.length; i++) {
-              const u = urunler[i];
+
+          async function wpPost(endpoint, body) {
+            if (!SYNC_WP) return {};
+            const r = await fetch(`${WP_URL}/wp-json/fs/v1/${endpoint}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-fs-secret': WP_SECRET },
+              body: JSON.stringify(body)
+            });
+            const text = await r.text();
+            console.log(`  [${endpoint}] HTTP ${r.status}: ${text.slice(0,200)}`);
+            try { return JSON.parse(text); } catch { return {}; }
+          }
+
+          async function productExists(source_url) {
+            const res = await wpPost('product-exists', { source_url });
+            return res.exists ? res.product_id : 0;
+          }
+
+          function groupByLink(urunler) {
+            const map = new Map();
+            for (const u of urunler || []) {
+              const key = u.urun_linki;
+              if (!key) continue;
+              if (!map.has(key)) map.set(key, []);
+              map.get(key).push(u);
+            }
+            return map;
+          }
+
+          function parseVariantParam(varyant_adi) {
+            if (!varyant_adi) return null;
+            const parts = String(varyant_adi).split(':');
+            if (parts.length < 2) return null;
+            const adi = parts[0].trim().toLowerCase();
+            const etiket = parts.slice(1).join(':').trim();
+            const deger = etiket.toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g')
+              .replace(/[ıİ]/g, 'i').replace(/[öÖ]/g, 'o')
+              .replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
+              .replace(/[^a-z0-9-]/g, '');
+            return { adi, etiket, deger };
+          }
+
+          async function syncGrup(rows, marka_adi) {
+            const base = rows[0];
+            const source_url = base.urun_linki;
+            if (!source_url) return;
+
+            const variants = rows.map(u => {
+              const param = parseVariantParam(u.varyant_adi);
+              return {
+                sku:          u.sku || '',
+                ean:          u.ean || '',
+                price_text:   String(u.guncel_fiyat || ''),
+                stock_status: String(u.stok ?? ''),
+                image_url:    u.kapak_gorsel || '',
+                parametreler: param ? [{ adi: param.adi, etiket: param.etiket, deger: param.deger }] : [],
+              };
+            });
+
+            const product_id = await productExists(source_url);
+
+            if (product_id) {
+              await wpPost('compel-sync', {
+                product_id,
+                store_name:   'Compel',
+                source_url,
+                price_text:   String(base.guncel_fiyat || ''),
+                stock_status: String(base.stok ?? ''),
+                variants,
+              });
+            } else {
+              await wpPost('import-product', {
+                product_name:  base.urun_adi || '',
+                source_url,
+                brand:         base.marka_adi || marka_adi || '',
+                category_name: base.kategori_adi || '',
+                product_code:  base.sku || '',
+                ean:           base.ean || '',
+                price_text:    String(base.guncel_fiyat || ''),
+                stock_status:  String(base.stok ?? ''),
+                image_url:     base.kapak_gorsel || '',
+                variants,
+              });
+            }
+          }
+
+          async function readKV(slug) {
+            const r = await fetch(`${WORKER}?get=${encodeURIComponent(slug)}`);
+            const text = await r.text();
+            console.log(`  [KV get] ${slug} HTTP ${r.status}`);
+            if (r.status === 404) return null;
+            if (!r.ok) throw new Error(`KV get HTTP ${r.status}: ${text.slice(0,300)}`);
+            try { return JSON.parse(text); } catch { return null; }
+          }
+
+          async function writeKV(slug, data) {
+            await fetchJson(`${WORKER}?set=${encodeURIComponent(slug)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+          }
+
+          async function rebuildMarka(slug) {
+            console.log(`  FULL REBUILD: ${slug}`);
+
+            const linkData = await fetchJson(`${WORKER}?u=${encodeURIComponent(slug)}&fields=urun_linki`);
+            const links = (linkData.urunler || []).map(x => x.urun_linki).filter(Boolean);
+
+            console.log(`  ${links.length} ürün linki bulundu`);
+
+            const urunler = [];
+
+            for (let i = 0; i < links.length; i++) {
+              const link = links[i];
               try {
-                const res = await get(`${WORKER}?u=${encodeURIComponent(u.urun_linki)}&fields=${FIELDS}`);
-                const rs = Array.isArray(res)?res:[res];
-                const match = u.varyant_adi ? rs.find(r=>r.sku===u.sku)||rs[0] : rs[0];
-                if (match&&!match.hata) { u.guncel_fiyat=match.guncel_fiyat; u.usd_kdv_haric=match.usd_kdv_haric; u.eur_kdv_haric=match.eur_kdv_haric; u.stok=match.stok; }
-              } catch(e) { console.warn(`  ${e.message}`); }
+                const data = await fetchJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${FULL_FIELDS}`);
+                const rows = Array.isArray(data) ? data : [data];
+                urunler.push(...rows.filter(x => x && x.urun_linki));
+                console.log(`  ${i + 1}/${links.length} OK: ${rows[0]?.urun_adi || link}`);
+              } catch (e) {
+                console.warn(`  Ürün okunamadı: ${link} - ${e.message}`);
+              }
               await sleep(DELAY);
             }
-            if (newLinks.length) {
-              console.log(`  ${newLinks.length} yeni ürün`);
-              for (const link of newLinks) {
-                try {
-                  const res = await get(`${WORKER}?u=${encodeURIComponent(link)}&fields=${ALL_FIELDS}`);
-                  const rows = Array.isArray(res)?res:[res];
-                  rows.forEach(r=>{ if(r&&!r.hata) urunler.push(r); });
-                } catch {}
-                await sleep(DELAY);
+
+            const body = {
+              marka_linki: linkData.marka_linki || '',
+              toplam_bulunan_urun_linki: links.length,
+              updated_at: new Date().toISOString(),
+              mode: 'rebuild',
+              urunler
+            };
+
+            await writeKV(slug, body);
+            console.log(`  KV yazıldı: ${urunler.length} satır`);
+
+            return body;
+          }
+
+          function norm(v) {
+            return String(v || '')
+              .toLowerCase()
+              .replace(/\s+/g, ' ')
+              .trim();
+          }
+
+          function findFreshRow(oldRow, freshRows) {
+            if (!freshRows.length) return null;
+
+            if (oldRow.sku) {
+              const bySku = freshRows.find(r => String(r.sku || '') === String(oldRow.sku || ''));
+              if (bySku) return bySku;
+            }
+
+            if (oldRow.ean) {
+              const byEan = freshRows.find(r => String(r.ean || '') === String(oldRow.ean || ''));
+              if (byEan) return byEan;
+            }
+
+            if (oldRow.varyant_adi) {
+              const byVar = freshRows.find(r => norm(r.varyant_adi) === norm(oldRow.varyant_adi));
+              if (byVar) return byVar;
+            }
+
+            return freshRows.length === 1 ? freshRows[0] : null;
+          }
+
+          async function refreshMarka(slug, oldData) {
+            console.log(`  REFRESH fiyat/stok: ${slug}`);
+
+            const oldRows = oldData.urunler || [];
+            const groups = groupByLink(oldRows);
+            const finalRows = [];
+
+            let i = 0;
+            for (const [link, rows] of groups) {
+              i++;
+              try {
+                const data = await fetchJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${DYN_FIELDS}`);
+                const freshRows = (Array.isArray(data) ? data : [data]).filter(x => x && x.urun_linki);
+
+                for (const oldRow of rows) {
+                  const fresh = findFreshRow(oldRow, freshRows);
+
+                  if (!fresh) {
+                    finalRows.push(oldRow);
+                    continue;
+                  }
+
+                  finalRows.push({
+                    ...oldRow,
+                    sku: oldRow.sku || fresh.sku || '',
+                    ean: oldRow.ean || fresh.ean || '',
+                    guncel_fiyat: fresh.guncel_fiyat ?? oldRow.guncel_fiyat,
+                    usd_kdv_haric: fresh.usd_kdv_haric ?? oldRow.usd_kdv_haric,
+                    eur_kdv_haric: fresh.eur_kdv_haric ?? oldRow.eur_kdv_haric,
+                    stok: fresh.stok ?? oldRow.stok
+                  });
+                }
+
+                console.log(`  ${i}/${groups.size} güncellendi: ${rows[0]?.urun_adi || link}`);
+              } catch (e) {
+                console.warn(`  Güncellenemedi: ${link} - ${e.message}`);
+                finalRows.push(...rows);
               }
+
+              await sleep(DELAY);
             }
-            const json = { ...data, urunler, guncelleme: new Date().toISOString() };
-            await fetch(`${WORKER}?set=${slug}`, { method:'POST', body: JSON.stringify(json) });
-            console.log(`  ✓ ${urunler.length} ürün`);
+
+            const body = {
+              ...oldData,
+              updated_at: new Date().toISOString(),
+              mode: 'refresh',
+              urunler: finalRows
+            };
+
+            await writeKV(slug, body);
+            console.log(`  KV fiyat/stok güncellendi: ${finalRows.length} satır`);
+
+            return body;
           }
+
+          async function syncDataToWP(data, slug) {
+            if (!SYNC_WP) {
+              console.log('  WordPress sync kapalı, sadece KV güncellendi');
+              return;
+            }
+
+            const urunler = data.urunler || [];
+            console.log(`  ${urunler.length} satır WordPress’e işlenecek`);
+
+            const gruplar = groupByLink(urunler);
+            console.log(`  ${gruplar.size} tekil ürün`);
+
+            for (const [link, rows] of gruplar) {
+              try { await syncGrup(rows, slug); }
+              catch(e) { console.warn(`  WP HATA (${link}): ${e.message}`); }
+              await sleep(DELAY);
+            }
+          }
+
+          async function syncMarka(slug) {
+            console.log(`Marka: ${slug}`);
+            console.log(`  mode=${MODE}, sync_wp=${SYNC_WP}`);
+
+            const oldData = await readKV(slug);
+
+            let data;
+            if (MODE === 'rebuild' || !oldData || !(oldData.urunler || []).length) {
+              data = await rebuildMarka(slug);
+            } else {
+              data = await refreshMarka(slug, oldData);
+            }
+
+            await syncDataToWP(data, slug);
+          }
+
+          async function getActiveMarkas() {
+            if (!WP_URL || !WP_SECRET) return null;
+
+            const url = `${WP_URL}/wp-json/fs/v1/active-brands`;
+
+            try {
+              const r = await fetch(url, {
+                headers: { 'x-fs-secret': WP_SECRET }
+              });
+
+              const text = await r.text();
+              console.log(`[active-brands] HTTP ${r.status}: ${text.slice(0,300)}`);
+
+              if (!r.ok) return null;
+
+              const data = JSON.parse(text);
+              const brands = Array.isArray(data.brands)
+                ? data.brands.map(b => typeof b === 'string' ? b : b.slug).filter(Boolean)
+                : null;
+
+              return brands && brands.length ? brands : null;
+            } catch (e) {
+              console.warn(`[active-brands] okunamadı: ${e.message}`);
+              return null;
+            }
+          }
+
+          async function getAllWorkerBrands() {
+            const data = await fetchJson(`${WORKER}?brands`);
+            return (data.brands || []).map(b => b.slug).filter(Boolean);
+          }
+
           async function main() {
-            const res = await get(`${WORKER}?brands`);
-            const brands = res.brands || [];
-            console.log(`${brands.length} marka`);
-            for (const b of brands) {
-              await updateBrand(b.slug);
-              await sleep(BRAND_DELAY);
+            console.log(`WORKER: ${WORKER}`);
+            console.log(`WP_URL: ${WP_URL || '(boş)'}`);
+            console.log(`MARKA: ${MARKA || '(boş)'}`);
+            console.log(`MODE: ${MODE}`);
+            console.log(`SYNC_WP: ${SYNC_WP}`);
+
+            if (MARKA) {
+              await syncMarka(MARKA);
+              console.log('Tamamlandi');
+              return;
             }
-            console.log('Tamamlandı');
+
+            let markalar = await getActiveMarkas();
+
+            if (markalar && markalar.length) {
+              console.log(`${markalar.length} aktif marka WP panelinden alındı`);
+            } else {
+              console.log('Aktif marka listesi alınamadı, Worker ?brands kullanılacak');
+              markalar = await getAllWorkerBrands();
+              console.log(`${markalar.length} marka Worker’dan alındı`);
+            }
+
+            for (const slug of markalar) {
+              await syncMarka(slug);
+              await sleep(DELAY);
+            }
+
+            console.log('Tamamlandi');
           }
-          main().catch(e => { console.error(e); process.exit(1); });
+
+          main().catch(e => {
+            console.error(e);
+            process.exit(1);
+          });
           JS
