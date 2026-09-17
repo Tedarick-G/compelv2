@@ -1,100 +1,45 @@
-name: Fiyat & Stok Güncelle
+name: WordPress Sync
 
 on:
   schedule:
-    - cron: '30 10 * * *'   # 13:30 TR TEST
+    - cron: '10 11 * * *'   # 14:10 TR TEST
   workflow_dispatch:
     inputs:
       marka:
-        description: 'Marka slug (örn: rode, headrush) — boş bırakırsan aktif/tüm markalar'
+        description: 'Marka slug (örn: rode, headrush) — boş bırakırsan aktif tüm markalar'
         required: false
         default: ''
-      mode:
-        description: 'auto: KV varsa sadece fiyat/stok, rebuild: tüm ürünü baştan çek, refresh: sadece fiyat/stok'
-        required: false
-        default: 'auto'
-        type: choice
-        options:
-          - auto
-          - refresh
-          - rebuild
-      sync_wp:
-        description: 'WordPress’e gönderilsin mi? Test için false seçilebilir.'
-        required: false
-        default: true
-        type: boolean
 
 jobs:
-  update:
+  sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 120
 
     steps:
-      - name: Fiyat & Stok Güncelle
+      - name: WordPress Sync
         env:
           WORKER: ${{ secrets.WORKER_URL }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_SECRET: ${{ secrets.WP_SECRET }}
-          MARKA: ${{ github.event.inputs.marka || '' }}
-          MODE: ${{ github.event.inputs.mode || 'auto' }}
-          SYNC_WP: ${{ github.event.inputs.sync_wp || 'true' }}
+          MARKA: ${{ github.event.inputs.marka }}
         run: |
           node << 'JS'
-          const WORKER    = (process.env.WORKER || '').replace(/\/+$/, '');
-          const WP_URL    = (process.env.WP_URL || '').replace(/\/+$/, '');
-          const WP_SECRET = process.env.WP_SECRET || '';
+          const WORKER    = process.env.WORKER;
+          const WP_URL    = process.env.WP_URL;
+          const WP_SECRET = process.env.WP_SECRET;
           const MARKA     = (process.env.MARKA || '').trim();
-          const MODE      = (process.env.MODE || 'auto').trim();
-          const SYNC_WP   = String(process.env.SYNC_WP || 'true') === 'true';
           const DELAY     = 3000;
-
-          const FULL_FIELDS = 'sira_no,urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
-          const DYN_FIELDS  = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
-
           const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-          if (!WORKER) throw new Error('WORKER_URL secret eksik');
-          if (SYNC_WP && !WP_URL) throw new Error('WP_URL secret eksik');
-          if (SYNC_WP && !WP_SECRET) throw new Error('WP_SECRET secret eksik');
-
-          async function fetchJson(url, opt = {}) {
-            const r = await fetch(url, opt);
-            const text = await r.text();
-
-            console.log(`[HTTP ${r.status}] ${url}`);
-
-            if (!r.ok) {
-              throw new Error(`HTTP ${r.status}: ${text.slice(0,300)}`);
-            }
-
-            try {
-              return JSON.parse(text);
-            } catch {
-              throw new Error(`JSON okunamadı: ${text.slice(0,300)}`);
-            }
-          }
-
           async function wpPost(endpoint, body) {
-            if (!SYNC_WP) return {};
-
             const r = await fetch(`${WP_URL}/wp-json/fs/v1/${endpoint}`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-fs-secret': WP_SECRET
-              },
+              headers: { 'Content-Type': 'application/json', 'x-fs-secret': WP_SECRET },
               body: JSON.stringify(body)
             });
-
             const text = await r.text();
-
             console.log(`  [${endpoint}] HTTP ${r.status}: ${text.slice(0,200)}`);
-
-            try {
-              return JSON.parse(text);
-            } catch {
-              return {};
-            }
+            try { return JSON.parse(text); } catch { return {}; }
           }
 
           async function productExists(source_url) {
@@ -104,54 +49,37 @@ jobs:
 
           function groupByLink(urunler) {
             const map = new Map();
-
             for (const u of urunler || []) {
               const key = u.urun_linki;
-
               if (!key) continue;
-
-              if (!map.has(key)) {
-                map.set(key, []);
-              }
-
+              if (!map.has(key)) map.set(key, []);
               map.get(key).push(u);
             }
-
             return map;
           }
 
           function parseVariantParam(varyant_adi) {
             if (!varyant_adi) return null;
-
-            const parts = String(varyant_adi).split(':');
-
+            const parts = varyant_adi.split(':');
             if (parts.length < 2) return null;
-
             const adi = parts[0].trim().toLowerCase();
             const etiket = parts.slice(1).join(':').trim();
-
             const deger = etiket.toLowerCase()
               .replace(/\s+/g, '-')
-              .replace(/[çÇ]/g, 'c')
-              .replace(/[ğĞ]/g, 'g')
-              .replace(/[ıİ]/g, 'i')
-              .replace(/[öÖ]/g, 'o')
-              .replace(/[şŞ]/g, 's')
-              .replace(/[üÜ]/g, 'u')
+              .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g')
+              .replace(/[ıİ]/g, 'i').replace(/[öÖ]/g, 'o')
+              .replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
               .replace(/[^a-z0-9-]/g, '');
-
             return { adi, etiket, deger };
           }
 
           async function syncGrup(rows, marka_adi) {
             const base = rows[0];
             const source_url = base.urun_linki;
-
             if (!source_url) return;
 
             const variants = rows.map(u => {
               const param = parseVariantParam(u.varyant_adi);
-
               return {
                 sku:          u.sku || '',
                 ean:          u.ean || '',
@@ -179,8 +107,8 @@ jobs:
                 source_url,
                 brand:         base.marka_adi || marka_adi || '',
                 category_name: base.kategori_adi || '',
-                product_code:  base.sku || '',
-                ean:           base.ean || '',
+                product_code:  base.sku  || '',
+                ean:           base.ean  || '',
                 price_text:    String(base.guncel_fiyat || ''),
                 stock_status:  String(base.stok ?? ''),
                 image_url:     base.kapak_gorsel || '',
@@ -189,256 +117,45 @@ jobs:
             }
           }
 
-          async function readKV(slug) {
-            const r = await fetch(`${WORKER}?get=${encodeURIComponent(slug)}`);
-            const text = await r.text();
+          async function syncMarka(slug) {
+            console.log(`Marka: ${slug}`);
+            const kvRes = await fetch(`${WORKER}?get=${slug}`);
+            if (kvRes.status === 404) { console.log(`  KVde yok, atlanıyor`); return; }
+            if (!kvRes.ok) { console.log(`  KV okunamadı HTTP ${kvRes.status}`); return; }
 
-            console.log(`  [KV get] ${slug} HTTP ${r.status}`);
-
-            if (r.status === 404) return null;
-
-            if (!r.ok) {
-              throw new Error(`KV get HTTP ${r.status}: ${text.slice(0,300)}`);
-            }
-
-            try {
-              return JSON.parse(text);
-            } catch {
-              return null;
-            }
-          }
-
-          async function writeKV(slug, data) {
-            await fetchJson(`${WORKER}?set=${encodeURIComponent(slug)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
-            });
-          }
-
-          async function rebuildMarka(slug) {
-            console.log(`  FULL REBUILD: ${slug}`);
-
-            const linkData = await fetchJson(`${WORKER}?u=${encodeURIComponent(slug)}&fields=urun_linki`);
-            const links = (linkData.urunler || [])
-              .map(x => x.urun_linki)
-              .filter(Boolean);
-
-            console.log(`  ${links.length} ürün linki bulundu`);
-
-            const urunler = [];
-
-            for (let i = 0; i < links.length; i++) {
-              const link = links[i];
-
-              try {
-                const data = await fetchJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(FULL_FIELDS)}`);
-                const rows = Array.isArray(data) ? data : [data];
-
-                urunler.push(...rows.filter(x => x && x.urun_linki));
-
-                console.log(`  ${i + 1}/${links.length} OK: ${rows[0]?.urun_adi || link}`);
-              } catch (e) {
-                console.warn(`  Ürün okunamadı: ${link} - ${e.message}`);
-              }
-
-              await sleep(DELAY);
-            }
-
-            const now = new Date().toISOString();
-
-            const body = {
-              brand: slug,
-              marka_linki: linkData.marka_linki || '',
-              toplam_bulunan_urun_linki: links.length,
-              guncelleme: now,
-              updated_at: now,
-              mode: 'rebuild',
-              urunler
-            };
-
-            await writeKV(slug, body);
-
-            console.log(`  KV yazıldı: ${urunler.length} satır`);
-
-            return body;
-          }
-
-          function norm(v) {
-            return String(v || '')
-              .toLowerCase()
-              .replace(/\s+/g, ' ')
-              .trim();
-          }
-
-          function findFreshRow(oldRow, freshRows) {
-            if (!freshRows.length) return null;
-
-            if (oldRow.sku) {
-              const bySku = freshRows.find(r => String(r.sku || '') === String(oldRow.sku || ''));
-              if (bySku) return bySku;
-            }
-
-            if (oldRow.ean) {
-              const byEan = freshRows.find(r => String(r.ean || '') === String(oldRow.ean || ''));
-              if (byEan) return byEan;
-            }
-
-            if (oldRow.varyant_adi) {
-              const byVar = freshRows.find(r => norm(r.varyant_adi) === norm(oldRow.varyant_adi));
-              if (byVar) return byVar;
-            }
-
-            return freshRows.length === 1 ? freshRows[0] : null;
-          }
-
-          async function refreshMarka(slug, oldData) {
-            console.log(`  REFRESH fiyat/stok: ${slug}`);
-
-            const oldRows = oldData.urunler || [];
-            const groups = groupByLink(oldRows);
-            const finalRows = [];
-
-            let i = 0;
-
-            for (const [link, rows] of groups) {
-              i++;
-
-              try {
-                const data = await fetchJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(DYN_FIELDS)}`);
-                const freshRows = (Array.isArray(data) ? data : [data])
-                  .filter(x => x && x.urun_linki);
-
-                for (const oldRow of rows) {
-                  const fresh = findFreshRow(oldRow, freshRows);
-
-                  if (!fresh) {
-                    finalRows.push(oldRow);
-                    continue;
-                  }
-
-                  finalRows.push({
-                    ...oldRow,
-                    sku: oldRow.sku || fresh.sku || '',
-                    ean: oldRow.ean || fresh.ean || '',
-                    guncel_fiyat: fresh.guncel_fiyat ?? oldRow.guncel_fiyat,
-                    usd_kdv_haric: fresh.usd_kdv_haric ?? oldRow.usd_kdv_haric,
-                    eur_kdv_haric: fresh.eur_kdv_haric ?? oldRow.eur_kdv_haric,
-                    stok: fresh.stok ?? oldRow.stok
-                  });
-                }
-
-                console.log(`  ${i}/${groups.size} güncellendi: ${rows[0]?.urun_adi || link}`);
-              } catch (e) {
-                console.warn(`  Güncellenemedi: ${link} - ${e.message}`);
-                finalRows.push(...rows);
-              }
-
-              await sleep(DELAY);
-            }
-
-            const now = new Date().toISOString();
-
-            const body = {
-              ...oldData,
-              brand: slug,
-              guncelleme: now,
-              updated_at: now,
-              mode: 'refresh',
-              urunler: finalRows
-            };
-
-            await writeKV(slug, body);
-
-            console.log(`  KV fiyat/stok güncellendi: ${finalRows.length} satır`);
-
-            return body;
-          }
-
-          async function syncDataToWP(data, slug) {
-            if (!SYNC_WP) {
-              console.log('  WordPress sync kapalı, sadece KV güncellendi');
-              return;
-            }
-
+            const data = await kvRes.json();
             const urunler = data.urunler || [];
-
-            console.log(`  ${urunler.length} satır WordPress’e işlenecek`);
+            console.log(`  ${urunler.length} satır bulundu`);
 
             const gruplar = groupByLink(urunler);
-
             console.log(`  ${gruplar.size} tekil ürün`);
 
             for (const [link, rows] of gruplar) {
-              try {
-                await syncGrup(rows, slug);
-              } catch(e) {
-                console.warn(`  WP HATA (${link}): ${e.message}`);
-              }
-
+              try { await syncGrup(rows, slug); }
+              catch(e) { console.warn(`  HATA (${link}): ${e.message}`); }
               await sleep(DELAY);
             }
           }
 
-          async function syncMarka(slug) {
-            console.log(`Marka: ${slug}`);
-            console.log(`  mode=${MODE}, sync_wp=${SYNC_WP}`);
-
-            const oldData = await readKV(slug);
-
-            let data;
-
-            if (MODE === 'rebuild' || !oldData || !(oldData.urunler || []).length) {
-              data = await rebuildMarka(slug);
-            } else {
-              data = await refreshMarka(slug, oldData);
-            }
-
-            await syncDataToWP(data, slug);
-          }
-
           async function getActiveMarkas() {
-            if (!WP_URL || !WP_SECRET) return null;
-
-            const url = `${WP_URL}/wp-json/fs/v1/active-brands`;
-
             try {
-              const r = await fetch(url, {
+              const r = await fetch(`${WP_URL}/wp-json/fs/v1/active-brands`, {
                 headers: { 'x-fs-secret': WP_SECRET }
               });
-
               const text = await r.text();
-
-              console.log(`[active-brands] HTTP ${r.status}: ${text.slice(0,300)}`);
-
+              console.log(`[active-brands] HTTP ${r.status}: ${text.slice(0,200)}`);
               if (!r.ok) return null;
 
               const data = JSON.parse(text);
-
-              const brands = Array.isArray(data.brands)
-                ? data.brands.map(b => typeof b === 'string' ? b : b.slug).filter(Boolean)
-                : null;
-
-              return brands && brands.length ? brands : null;
-            } catch (e) {
-              console.warn(`[active-brands] okunamadı: ${e.message}`);
+              return Array.isArray(data.brands) && data.brands.length ? data.brands : null;
+            } catch(e) {
+              console.warn(`[active-brands] alınamadı: ${e.message}`);
               return null;
             }
           }
 
-          async function getAllWorkerBrands() {
-            const data = await fetchJson(`${WORKER}?brands`);
-            return (data.brands || [])
-              .map(b => b.slug)
-              .filter(Boolean);
-          }
-
           async function main() {
-            console.log(`WORKER: ${WORKER}`);
-            console.log(`WP_URL: ${WP_URL || '(boş)'}`);
-            console.log(`MARKA: ${MARKA || '(boş)'}`);
-            console.log(`MODE: ${MODE}`);
-            console.log(`SYNC_WP: ${SYNC_WP}`);
+            console.log(`WP_URL: ${WP_URL}`);
 
             if (MARKA) {
               await syncMarka(MARKA);
@@ -446,26 +163,27 @@ jobs:
               return;
             }
 
-            let markalar = await getActiveMarkas();
+            const activeMarkas = await getActiveMarkas();
 
-            if (markalar && markalar.length) {
-              console.log(`${markalar.length} aktif marka WP panelinden alındı`);
+            if (activeMarkas && activeMarkas.length) {
+              console.log(`${activeMarkas.length} aktif marka (WP panelinden)`);
+              for (const slug of activeMarkas) {
+                await syncMarka(slug);
+                await sleep(3000);
+              }
             } else {
-              console.log('Aktif marka listesi alınamadı, Worker ?brands kullanılacak');
-              markalar = await getAllWorkerBrands();
-              console.log(`${markalar.length} marka Worker’dan alındı`);
-            }
-
-            for (const slug of markalar) {
-              await syncMarka(slug);
-              await sleep(DELAY);
+              console.log('Aktif marka listesi alınamadı, tüm markalar işleniyor');
+              const res = await fetch(`${WORKER}?brands`);
+              const brands = (await res.json()).brands || [];
+              console.log(`${brands.length} marka`);
+              for (const b of brands) {
+                await syncMarka(b.slug);
+                await sleep(3000);
+              }
             }
 
             console.log('Tamamlandi');
           }
 
-          main().catch(e => {
-            console.error(e);
-            process.exit(1);
-          });
+          main().catch(e => { console.error(e); process.exit(1); });
           JS
