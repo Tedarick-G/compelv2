@@ -1,8 +1,8 @@
-name: Stanton 5dk Test
+name: Stanton 12 Test
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '0 9 * * *'   # 12:00 TR
   workflow_dispatch:
 
 jobs:
@@ -19,6 +19,7 @@ jobs:
           const WORKER = (process.env.WORKER || '').replace(/\/+$/, '');
           const SLUG = 'stanton';
           const DELAY = 3000;
+
           const DYN_FIELDS = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
           const FULL_FIELDS = 'sira_no,urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
 
@@ -29,20 +30,37 @@ jobs:
           async function fetchJson(url, opt = {}) {
             const r = await fetch(url, opt);
             const text = await r.text();
+
             console.log(`[HTTP ${r.status}] ${url}`);
-            if (!r.ok) throw new Error(`HTTP ${r.status}: ${text.slice(0,300)}`);
-            try { return JSON.parse(text); }
-            catch { throw new Error(`JSON okunamadı: ${text.slice(0,300)}`); }
+
+            if (!r.ok) {
+              throw new Error(`HTTP ${r.status}: ${text.slice(0,300)}`);
+            }
+
+            try {
+              return JSON.parse(text);
+            } catch {
+              throw new Error(`JSON okunamadi: ${text.slice(0,300)}`);
+            }
           }
 
           async function readKV(slug) {
             const r = await fetch(`${WORKER}?get=${encodeURIComponent(slug)}`);
             const text = await r.text();
+
             console.log(`[KV get] ${slug} HTTP ${r.status}`);
+
             if (r.status === 404) return null;
-            if (!r.ok) throw new Error(`KV get HTTP ${r.status}: ${text.slice(0,300)}`);
-            try { return JSON.parse(text); }
-            catch { return null; }
+
+            if (!r.ok) {
+              throw new Error(`KV get HTTP ${r.status}: ${text.slice(0,300)}`);
+            }
+
+            try {
+              return JSON.parse(text);
+            } catch {
+              return null;
+            }
           }
 
           async function writeKV(slug, data) {
@@ -55,16 +73,25 @@ jobs:
 
           function groupByLink(rows) {
             const map = new Map();
+
             for (const u of rows || []) {
               if (!u.urun_linki) continue;
-              if (!map.has(u.urun_linki)) map.set(u.urun_linki, []);
+
+              if (!map.has(u.urun_linki)) {
+                map.set(u.urun_linki, []);
+              }
+
               map.get(u.urun_linki).push(u);
             }
+
             return map;
           }
 
           function norm(v) {
-            return String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            return String(v || '')
+              .toLowerCase()
+              .replace(/\s+/g, ' ')
+              .trim();
           }
 
           function findFreshRow(oldRow, freshRows) {
@@ -92,9 +119,11 @@ jobs:
             console.log(`REBUILD: ${slug}`);
 
             const linkData = await fetchJson(`${WORKER}?u=${encodeURIComponent(slug)}&fields=urun_linki`);
-            const links = (linkData.urunler || []).map(x => x.urun_linki).filter(Boolean);
+            const links = (linkData.urunler || [])
+              .map(x => x.urun_linki)
+              .filter(Boolean);
 
-            console.log(`${links.length} ürün linki bulundu`);
+            console.log(`${links.length} urun linki bulundu`);
 
             const urunler = [];
 
@@ -104,10 +133,12 @@ jobs:
               try {
                 const data = await fetchJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(FULL_FIELDS)}`);
                 const rows = Array.isArray(data) ? data : [data];
+
                 urunler.push(...rows.filter(x => x && x.urun_linki));
+
                 console.log(`${i + 1}/${links.length} OK: ${rows[0]?.urun_adi || link}`);
               } catch (e) {
-                console.warn(`Ürün okunamadı: ${link} - ${e.message}`);
+                console.warn(`Urun okunamadi: ${link} - ${e.message}`);
               }
 
               await sleep(DELAY);
@@ -126,7 +157,9 @@ jobs:
             };
 
             await writeKV(slug, body);
-            console.log(`KV rebuild yazıldı: ${urunler.length} satır`);
+
+            console.log(`KV rebuild yazildi: ${urunler.length} satir`);
+
             return body;
           }
 
@@ -144,7 +177,8 @@ jobs:
 
               try {
                 const data = await fetchJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(DYN_FIELDS)}`);
-                const freshRows = (Array.isArray(data) ? data : [data]).filter(x => x && x.urun_linki);
+                const freshRows = (Array.isArray(data) ? data : [data])
+                  .filter(x => x && x.urun_linki);
 
                 for (const oldRow of rows) {
                   const fresh = findFreshRow(oldRow, freshRows);
@@ -165,9 +199,9 @@ jobs:
                   });
                 }
 
-                console.log(`${i}/${groups.size} güncellendi: ${rows[0]?.urun_adi || link}`);
+                console.log(`${i}/${groups.size} guncellendi: ${rows[0]?.urun_adi || link}`);
               } catch (e) {
-                console.warn(`Güncellenemedi: ${link} - ${e.message}`);
+                console.warn(`Guncellenemedi: ${link} - ${e.message}`);
                 finalRows.push(...rows);
               }
 
@@ -186,21 +220,24 @@ jobs:
             };
 
             await writeKV(slug, body);
-            console.log(`KV refresh yazıldı: ${finalRows.length} satır`);
+
+            console.log(`KV refresh yazildi: ${finalRows.length} satir`);
+
             return body;
           }
 
           async function main() {
             console.log(`WORKER: ${WORKER}`);
             console.log(`MARKA: ${SLUG}`);
+            console.log('Saat 12 Stanton otomatik test basladi');
 
             const oldData = await readKV(SLUG);
 
             if (!oldData || !(oldData.urunler || []).length) {
-              console.log('KV yok veya boş, rebuild yapılacak');
+              console.log('KV yok veya bos, rebuild yapilacak');
               await rebuildMarka(SLUG);
             } else {
-              console.log(`KV bulundu: ${(oldData.urunler || []).length} satır`);
+              console.log(`KV bulundu: ${(oldData.urunler || []).length} satir`);
               await refreshMarka(SLUG, oldData);
             }
 
