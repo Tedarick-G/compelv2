@@ -1,8 +1,8 @@
 name: Compel KV Guncelle
 
-on:
+"on":
   schedule:
-    - cron: '40 13 * * *'   # 16:40 TR
+    - cron: '10 14 * * *'   # 17:10 TR
   workflow_dispatch:
     inputs:
       marka:
@@ -26,7 +26,6 @@ jobs:
           const MARKA = (process.env.MARKA || '').trim();
           const DELAY = 3000;
 
-          const FULL_FIELDS = 'sira_no,urun_linki,kapak_gorsel,urun_adi,varyant_adi,sku,ean,marka_adi,kategori_adi,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
           const DYN_FIELDS = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
 
           if (!WORKER) throw new Error('WORKER_URL secret eksik');
@@ -87,7 +86,11 @@ jobs:
 
             for (const u of rows || []) {
               if (!u.urun_linki) continue;
-              if (!map.has(u.urun_linki)) map.set(u.urun_linki, []);
+
+              if (!map.has(u.urun_linki)) {
+                map.set(u.urun_linki, []);
+              }
+
               map.get(u.urun_linki).push(u);
             }
 
@@ -95,7 +98,10 @@ jobs:
           }
 
           function norm(v) {
-            return String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            return String(v || '')
+              .toLowerCase()
+              .replace(/\s+/g, ' ')
+              .trim();
           }
 
           function matchRow(oldRow, freshRows) {
@@ -119,55 +125,17 @@ jobs:
             return freshRows.length === 1 ? freshRows[0] : null;
           }
 
-          async function rebuildMarka(slug) {
-            console.log(`REBUILD: ${slug}`);
+          async function updateMarka(slug) {
+            console.log(`Marka: ${slug}`);
 
-            const linkData = await getJson(`${WORKER}?u=${encodeURIComponent(slug)}&fields=urun_linki`);
-            const links = (linkData.urunler || []).map(x => x.urun_linki).filter(Boolean);
+            const oldData = await readKV(slug);
 
-            console.log(`${links.length} urun linki bulundu`);
-
-            const urunler = [];
-
-            for (let i = 0; i < links.length; i++) {
-              const link = links[i];
-
-              try {
-                const data = await getJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(FULL_FIELDS)}`);
-                const rows = Array.isArray(data) ? data : [data];
-
-                urunler.push(...rows.filter(x => x && x.urun_linki));
-
-                console.log(`${i + 1}/${links.length} OK: ${rows[0]?.urun_adi || link}`);
-              } catch (e) {
-                console.warn(`Urun okunamadi: ${link} - ${e.message}`);
-              }
-
-              await sleep(DELAY);
+            if (!oldData || !(oldData.urunler || []).length) {
+              console.log('KV yok veya bos, atlandi');
+              return;
             }
 
-            const now = new Date().toISOString();
-
-            const body = {
-              brand: slug,
-              marka_linki: linkData.marka_linki || '',
-              toplam_bulunan_urun_linki: links.length,
-              guncelleme: now,
-              updated_at: now,
-              mode: 'rebuild',
-              urunler
-            };
-
-            await writeKV(slug, body);
-
-            console.log(`KV rebuild yazildi: ${urunler.length} satir`);
-          }
-
-          async function refreshMarka(slug, oldData) {
-            console.log(`REFRESH: ${slug}`);
-
-            const oldRows = oldData.urunler || [];
-            const groups = groupByLink(oldRows);
+            const groups = groupByLink(oldData.urunler);
             const finalRows = [];
 
             let i = 0;
@@ -220,20 +188,7 @@ jobs:
 
             await writeKV(slug, body);
 
-            console.log(`KV refresh yazildi: ${finalRows.length} satir`);
-          }
-
-          async function updateMarka(slug) {
-            console.log(`Marka: ${slug}`);
-
-            const oldData = await readKV(slug);
-
-            if (!oldData || !(oldData.urunler || []).length) {
-              console.log('KV yok veya bos, rebuild yapilacak');
-              await rebuildMarka(slug);
-            } else {
-              await refreshMarka(slug, oldData);
-            }
+            console.log(`KV yazildi: ${finalRows.length} satir`);
           }
 
           async function main() {
