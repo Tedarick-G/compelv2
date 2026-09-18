@@ -2,7 +2,7 @@ name: Compel KV Guncelle
 
 on:
   schedule:
-    - cron: '0 12 * * *'   # 15:00 TR
+    - cron: '0 12 * * *'   # 15:10 TR
   workflow_dispatch:
     inputs:
       marka:
