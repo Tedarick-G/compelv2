@@ -1,6 +1,6 @@
 name: Compel KV Guncelle
 
-"on":
+on:
   schedule:
     - cron: '0 12 * * *'   # 15:00 TR
   workflow_dispatch:
