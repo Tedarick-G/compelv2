@@ -2,11 +2,11 @@ name: Compel KV Guncelle
 
 "on":
   schedule:
-    - cron: '10 14 * * *'   # 17:10 TR
+    - cron: '0 12 * * *'   # 15:00 TR
   workflow_dispatch:
     inputs:
       marka:
-        description: 'Marka slug; bos birakirsan tum markalar'
+        description: 'Marka slug; bos birakirsan otomatik siradaki marka'
         required: false
         default: ''
 
@@ -22,228 +22,132 @@ jobs:
           MARKA: ${{ github.event.inputs.marka }}
         run: |
           node << 'JS'
-          const WORKER = (process.env.WORKER || '').replace(/\/+$/, '');
-          const MARKA = (process.env.MARKA || '').trim();
-          const DELAY = 3000;
+          const W = (process.env.WORKER || '').replace(/\/+$/, '');
+          const M = (process.env.MARKA || '').trim();
+          const F = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
 
-          const DYN_FIELDS = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
-
-          const BRAND_LIST = [
-            'rode',
-            'hosa',
-            'ssl',
-            'warm-audio',
-            'audient',
-            'arturia',
-            'numark',
-            'stanton',
-            'presonus',
-            'ik-multimedia',
-            'steinberg',
-            'yamaha',
-            'krk',
-            'genelec',
-            'neumann',
-            'sennheiser',
-            'behringer',
-            'akai',
-            'alesis',
-            'm-audio',
-            'korg',
-            'nord',
-            'focusrite',
-            'adam-audio',
-            'mackie',
-            'shure',
-            'audio-technica',
-            'tascam',
-            'zoom'
+          const BRANDS = [
+            'rode','hosa','ssl','warm-audio','audient','arturia','numark','stanton',
+            'presonus','ik-multimedia','steinberg','yamaha','krk','neumann',
+            'sennheiser','behringer','akai','alesis','m-audio','korg','nord',
+            'focusrite','adam-audio','mackie','shure','audio-technica','tascam','zoom'
           ];
 
-          if (!WORKER) throw new Error('WORKER_URL secret eksik');
+          if (!W) throw new Error('WORKER_URL secret eksik');
 
-          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          const wait = ms => new Promise(r => setTimeout(r, ms));
+          const rnd = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+          const pick = () => BRANDS[Math.floor(Date.now() / 86400000) % BRANDS.length];
 
-          async function getJson(url, opt = {}) {
+          async function json(url, opt) {
             const r = await fetch(url, opt);
-            const text = await r.text();
+            const t = await r.text();
+            console.log(`[${r.status}] ${url}`);
+            if (!r.ok) throw new Error(t.slice(0,300));
+            return JSON.parse(t);
+          }
 
-            console.log(`[HTTP ${r.status}] ${url}`);
-
-            if (!r.ok) {
-              throw new Error(`HTTP ${r.status}: ${text.slice(0,300)}`);
-            }
-
+          async function retry(url) {
             try {
-              return JSON.parse(text);
-            } catch {
-              throw new Error(`JSON okunamadi: ${text.slice(0,300)}`);
+              return await json(url);
+            } catch (e) {
+              if (!String(e.message).includes('403')) throw e;
+              console.log('403 alindi, 60 sn bekleniyor...');
+              await wait(60000);
+              return await json(url);
             }
           }
 
-          async function readKV(slug) {
-            const r = await fetch(`${WORKER}?get=${encodeURIComponent(slug)}`);
-            const text = await r.text();
-
-            console.log(`[KV get] ${slug} HTTP ${r.status}`);
-
+          async function getKV(slug) {
+            const r = await fetch(`${W}?get=${encodeURIComponent(slug)}`);
+            const t = await r.text();
+            console.log(`[KV ${r.status}] ${slug}`);
             if (r.status === 404) return null;
-
-            if (!r.ok) {
-              throw new Error(`KV get HTTP ${r.status}: ${text.slice(0,300)}`);
-            }
-
-            try {
-              return JSON.parse(text);
-            } catch {
-              return null;
-            }
+            if (!r.ok) throw new Error(t.slice(0,300));
+            return JSON.parse(t);
           }
 
-          async function writeKV(slug, data) {
-            await getJson(`${WORKER}?set=${encodeURIComponent(slug)}`, {
+          async function setKV(slug, body) {
+            await json(`${W}?set=${encodeURIComponent(slug)}`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(data)
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify(body)
             });
           }
 
-          async function getBrands() {
-            return BRAND_LIST;
+          const n = v => String(v || '').toLowerCase().replace(/\s+/g,' ').trim();
+
+          function match(old, fresh) {
+            return fresh.find(x => old.sku && x.sku == old.sku)
+              || fresh.find(x => old.ean && x.ean == old.ean)
+              || fresh.find(x => old.varyant_adi && n(x.varyant_adi) == n(old.varyant_adi))
+              || (fresh.length == 1 ? fresh[0] : null);
           }
 
-          function groupByLink(rows) {
-            const map = new Map();
-
-            for (const u of rows || []) {
-              if (!u.urun_linki) continue;
-
-              if (!map.has(u.urun_linki)) {
-                map.set(u.urun_linki, []);
-              }
-
-              map.get(u.urun_linki).push(u);
-            }
-
-            return map;
-          }
-
-          function norm(v) {
-            return String(v || '')
-              .toLowerCase()
-              .replace(/\s+/g, ' ')
-              .trim();
-          }
-
-          function matchRow(oldRow, freshRows) {
-            if (!freshRows.length) return null;
-
-            if (oldRow.sku) {
-              const x = freshRows.find(r => String(r.sku || '') === String(oldRow.sku || ''));
-              if (x) return x;
-            }
-
-            if (oldRow.ean) {
-              const x = freshRows.find(r => String(r.ean || '') === String(oldRow.ean || ''));
-              if (x) return x;
-            }
-
-            if (oldRow.varyant_adi) {
-              const x = freshRows.find(r => norm(r.varyant_adi) === norm(oldRow.varyant_adi));
-              if (x) return x;
-            }
-
-            return freshRows.length === 1 ? freshRows[0] : null;
-          }
-
-          async function updateMarka(slug) {
+          async function run(slug) {
             console.log(`Marka: ${slug}`);
 
-            const oldData = await readKV(slug);
-
-            if (!oldData || !(oldData.urunler || []).length) {
+            const old = await getKV(slug);
+            if (!old || !(old.urunler || []).length) {
               console.log('KV yok veya bos, atlandi');
               return;
             }
 
-            const groups = groupByLink(oldData.urunler);
-            const finalRows = [];
+            const groups = new Map();
+            for (const u of old.urunler) {
+              if (!u.urun_linki) continue;
+              if (!groups.has(u.urun_linki)) groups.set(u.urun_linki, []);
+              groups.get(u.urun_linki).push(u);
+            }
 
+            const out = [];
             let i = 0;
 
             for (const [link, rows] of groups) {
               i++;
 
               try {
-                const data = await getJson(`${WORKER}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(DYN_FIELDS)}`);
-                const freshRows = (Array.isArray(data) ? data : [data]).filter(x => x && x.urun_linki);
+                const url = `${W}?u=${encodeURIComponent(link)}&fields=${encodeURIComponent(F)}`;
+                const data = await retry(url);
+                const fresh = (Array.isArray(data) ? data : [data]).filter(x => x && x.urun_linki);
 
                 for (const oldRow of rows) {
-                  const fresh = matchRow(oldRow, freshRows);
-
-                  if (!fresh) {
-                    finalRows.push(oldRow);
-                    continue;
-                  }
-
-                  finalRows.push({
+                  const f = match(oldRow, fresh);
+                  out.push(f ? {
                     ...oldRow,
-                    sku: oldRow.sku || fresh.sku || '',
-                    ean: oldRow.ean || fresh.ean || '',
-                    guncel_fiyat: fresh.guncel_fiyat ?? oldRow.guncel_fiyat,
-                    usd_kdv_haric: fresh.usd_kdv_haric ?? oldRow.usd_kdv_haric,
-                    eur_kdv_haric: fresh.eur_kdv_haric ?? oldRow.eur_kdv_haric,
-                    stok: fresh.stok ?? oldRow.stok
-                  });
+                    sku: oldRow.sku || f.sku || '',
+                    ean: oldRow.ean || f.ean || '',
+                    guncel_fiyat: f.guncel_fiyat ?? oldRow.guncel_fiyat,
+                    usd_kdv_haric: f.usd_kdv_haric ?? oldRow.usd_kdv_haric,
+                    eur_kdv_haric: f.eur_kdv_haric ?? oldRow.eur_kdv_haric,
+                    stok: f.stok ?? oldRow.stok
+                  } : oldRow);
                 }
 
-                console.log(`${i}/${groups.size} guncellendi`);
+                console.log(`${i}/${groups.size} OK`);
               } catch (e) {
-                console.warn(`Guncellenemedi: ${link} - ${e.message}`);
-                finalRows.push(...rows);
+                console.log(`${i}/${groups.size} atlandi: ${e.message.slice(0,120)}`);
+                out.push(...rows);
               }
 
-              await sleep(DELAY);
+              await wait(rnd(12000,20000));
             }
 
             const now = new Date().toISOString();
 
-            const body = {
-              ...oldData,
-              brand: oldData.brand || slug,
+            await setKV(slug, {
+              ...old,
+              brand: old.brand || slug,
               guncelleme: now,
               updated_at: now,
-              mode: 'refresh',
-              urunler: finalRows
-            };
+              mode: 'slow-refresh',
+              urunler: out
+            });
 
-            await writeKV(slug, body);
-
-            console.log(`KV yazildi: ${finalRows.length} satir`);
+            console.log(`Bitti: ${slug} / ${out.length} satir`);
           }
 
-          async function main() {
-            console.log(`WORKER: ${WORKER}`);
-            console.log(`MARKA: ${MARKA || '(tum markalar)'}`);
-
-            const brands = MARKA ? [MARKA] : await getBrands();
-
-            console.log(`${brands.length} marka islenecek`);
-
-            for (const slug of brands) {
-              try {
-                await updateMarka(slug);
-              } catch (e) {
-                console.warn(`Marka atlandi: ${slug} - ${e.message}`);
-              }
-
-              await sleep(DELAY);
-            }
-
-            console.log('Tamamlandi');
-          }
-
-          main().catch(e => {
+          run(M || pick()).catch(e => {
             console.error(e);
             process.exit(1);
           });
