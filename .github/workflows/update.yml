@@ -12,7 +12,7 @@ name: Compel KV Guncelle
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
 
     steps:
@@ -27,6 +27,38 @@ jobs:
           const DELAY = 3000;
 
           const DYN_FIELDS = 'urun_linki,varyant_adi,sku,ean,guncel_fiyat,usd_kdv_haric,eur_kdv_haric,stok';
+
+          const BRAND_LIST = [
+            'rode',
+            'hosa',
+            'ssl',
+            'warm-audio',
+            'audient',
+            'arturia',
+            'numark',
+            'stanton',
+            'presonus',
+            'ik-multimedia',
+            'steinberg',
+            'yamaha',
+            'krk',
+            'genelec',
+            'neumann',
+            'sennheiser',
+            'behringer',
+            'akai',
+            'alesis',
+            'm-audio',
+            'korg',
+            'nord',
+            'focusrite',
+            'adam-audio',
+            'mackie',
+            'shure',
+            'audio-technica',
+            'tascam',
+            'zoom'
+          ];
 
           if (!WORKER) throw new Error('WORKER_URL secret eksik');
 
@@ -77,8 +109,7 @@ jobs:
           }
 
           async function getBrands() {
-            const data = await getJson(`${WORKER}?brands`);
-            return (data.brands || []).map(b => b.slug).filter(Boolean);
+            return BRAND_LIST;
           }
 
           function groupByLink(rows) {
@@ -200,7 +231,12 @@ jobs:
             console.log(`${brands.length} marka islenecek`);
 
             for (const slug of brands) {
-              await updateMarka(slug);
+              try {
+                await updateMarka(slug);
+              } catch (e) {
+                console.warn(`Marka atlandi: ${slug} - ${e.message}`);
+              }
+
               await sleep(DELAY);
             }
 
